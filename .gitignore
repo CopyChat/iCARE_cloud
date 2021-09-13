@@ -1,0 +1,21 @@
+# Pycharm files
+*.xml
+
+# dir:
+local_data/
+
+
+# plot:
+plot
+
+# netcdf, etc...
+dataset/list_classes__5Regimes.csv
+*.nc
+
+.DS_Store
+*.temp
+/.idea
+/.hydra
+/src/*.mat
+*.mat
+.hydra

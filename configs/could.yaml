@@ -1,0 +1,42 @@
+# @package _global_
+
+hydra:
+  run:
+    # Output directory for normal run
+#    dir: ./outputs/${now:%Y-%m-%d_%H-%M-%S}
+    dir: .
+
+# Directories
+dir:
+  working: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/
+  data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/dataset
+  local_data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data
+  plot: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/plot
+
+job:
+  icare_data:
+    add_lon_lat: 1
+
+
+
+
+param:
+  plot_big_data_test: 1
+
+
+input:
+  icare_CT: S_NWC_CT_MSG3_globeM-VISIR_20170827T120000Z.nc
+  geo_3km: MSG+0415.3km.hdf
+  geo_1km: MSG+0415.1km.hdf
+
+#plot:
+#
+#output:
+
+
+
+
+
+
+
+
