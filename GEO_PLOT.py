@@ -7,6 +7,7 @@ __version__ = f'Version 1.0  \nTime-stamp: <2019-02-21>'
 __author__ = "ChaoTANG@univ-reunion.fr"
 
 import os
+import sys
 from typing import List
 import warnings
 import hydra
@@ -35,6 +36,21 @@ def my_coding_rules():
     print(f'classification file in pd.DataFrame with DateTimeIndex')
     print(f'geo-field in DataArray with good name and units')
     print(f'see the function read_to_standard_da for the standard dim names')
+
+
+# ----------------------------- definition -----------------------------
+
+def get_possible_standard_coords():
+    """
+    that the definition of all project, used by read nc to standard da
+    :return:
+    :rtype:
+    """
+    standard_coords = ['time', 'lev', 'lat', 'lon', 'number']
+    # this definition is used for all projects, that's the best order do not change this
+    # key word: order, dims, coords,
+
+    return standard_coords
 
 
 # -----------------------------
@@ -153,6 +169,23 @@ def convert_multi_da_to_ds(list_da: list, list_var_name: list) -> xr.Dataset:
             ds[list_var_name[i]] = list_da[i]
 
     return ds
+
+
+def read_binary_file(bf: str):
+    """
+    to read binary file
+    :param bf:
+    :type bf:
+    :return:
+    :rtype:
+    """
+
+    # example: f'./local_data/MSG+0415.3km.lon'
+
+    data = np.fromfile(bf, '<f4')  # little-endian float32
+    # data = np.fromfile(bf, '>f4')  # big-endian float32
+
+    return data
 
 
 def convert_ds_to_da(ds: xr.Dataset, varname: str = 'varname') -> xr.DataArray:
@@ -824,7 +857,6 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
                                         only_significant_points: bool = 0,
                                         suptitle_add_word: str = '',
                                         plot_big_data_test: int = 1):
-
     """
         diurnal field in classification, data are processed before input to this question
     note:
@@ -2447,6 +2479,61 @@ def data_filter_by_key_limit_value(data, key: str, how: str, value: float):
     return return_data
 
 
+def reduce_ndim_coord(coord: xr.DataArray, dim_name: str, random: bool = True,
+                      max_check_len: int = 500, check_ratio: float = 0.1):
+    """
+    to check if the input da, usually a coord or dim of a geo map, is static or not,
+    if it's static try to reduce the num of dim of this coord
+
+    :param max_check_len:
+    :type max_check_len:
+    :param dim_name: to check if this dim is change as a function of others
+    :type dim_name: such as 'south_north' if the input coord is lon
+    :param check_ratio: percentage of the total size, for check if random is True
+    :type check_ratio:
+    :param coord: input coord such as lon or lat
+    :type coord:
+    :param random: to use random data, 10 percent of the total data
+    :type random:
+    :return: ndim-reduced coord as da
+    :rtype:
+    """
+
+    original_coord = coord
+    check_coord = coord
+
+    other_dim = list(original_coord.dims)
+    other_dim.remove(dim_name)
+
+    check_coord = check_coord.stack(new_dim=other_dim)
+
+    if random:
+        from random import randint
+        check_len = int(min(check_coord.shape[0] * check_ratio, max_check_len))
+        check_index = [randint(0, check_len - 1) for x in range(check_len)]
+
+        # select some sample to boost
+        check_coord = check_coord.isel(new_dim=check_index)
+
+    # starting to check if dim of dim_name is changing as a function of other_dims
+    check_coord = check_coord.transpose(..., dim_name)
+
+    diff = 0
+    for i in range(check_coord.shape[0]):
+        if np.array_equal(check_coord[i], check_coord[0]):
+            pass
+        else:
+            diff += 1
+            print('not same: ', i)
+            print(f'random number is ', check_index)
+
+    if diff:
+        return original_coord
+    else:
+        # every lon, such as lon[i, :] is the same
+        return check_coord[0]
+
+
 def get_time_lon_lat_from_da(da: xr.DataArray):
     """
 
@@ -2458,32 +2545,26 @@ def get_time_lon_lat_from_da(da: xr.DataArray):
     -------
     dict :     return {'time': time, 'lon': lon, 'lat': lat, 'number': number}
     """
-    coords_names: dict = get_time_lon_lat_name_from_da(da)
+    coords_names: dict = get_time_lon_lat_name_from_da(da, name_from='coords')
     # attention: here the coords names maybe the dim names, if coords is missing in the *.nc file.
 
     coords = dict()
 
-    if 'lon' in coords_names:
-        lon = da[coords_names['lon']].values
+    for lonlat in ['lon', 'lat']:
+        if lonlat in coords_names:
+            lon_or_lat: xr.DataArray = da[coords_names[lonlat]]
 
-        if lon.ndim == 2:
-            lon = lon[0]
-        # for WRF out, it has 3 dims (time, lon, lat), even they are the same
-        if lon.ndim == 3:
-            lon = lon[0, 0]
-        lon = np.array([x - 360 if x > 180 else x for x in lon])
+            if lon_or_lat.ndim == 1:
+                lon_or_lat = lon_or_lat.values
 
-        coords.update(lon=lon)
+            if lon_or_lat.ndim > 1:
+                dim_names = get_time_lon_lat_name_from_da(lon_or_lat, name_from='dims')
+                lon_or_lat = reduce_ndim_coord(coord=lon_or_lat, dim_name=dim_names[lonlat], random=True).values
 
-    if 'lat' in coords_names:
-        lat = da[coords_names['lat']].values
-        if lat.ndim == 2:
-            lat = lat[:, 0]
-        # for WRF out, it has 3 dims (time, lat, lat), even they are the same
-        if lat.ndim == 3:
-            lat = lat[0, :, 0]
+            if lonlat == 'lon':
+                lon_or_lat = np.array([x - 360 if x > 180 else x for x in lon_or_lat])
 
-        coords.update(lat=lat)
+            coords[lonlat] = lon_or_lat
 
     if 'time' in coords_names:
         time = da[coords_names['time']].values
@@ -2500,12 +2581,14 @@ def get_time_lon_lat_from_da(da: xr.DataArray):
     return coords
 
 
-def get_time_lon_lat_name_from_da(da: xr.DataArray):
+def get_time_lon_lat_name_from_da(da: xr.DataArray,
+                                  name_from: str = 'coords'):
     """
 
     Parameters
     ----------
-    da :
+    da ():
+    name_from (): get name from coords by default, possible get name from dims.
 
     Returns
     -------
@@ -2513,45 +2596,51 @@ def get_time_lon_lat_name_from_da(da: xr.DataArray):
     """
     # definitions:
     possible_coords_names = {
-        'time': ['time', 'datetime', 'XTIME'],
-        'lon': ['lon', 'rlon', 'longitude', 'x', 'XLONG', 'XLONG_U', 'XLONG_V'],
-        'lat': ['lat', 'rlat', 'latitude', 'y', 'XLAT', 'XLAT_U', 'XLAT_V'],
+        'time': ['time', 'datetime', 'XTIME', 'Time'],
+        'lon': ['lon', 'west_east', 'rlon', 'longitude', 'nx', 'x', 'XLONG', 'XLONG_U', 'XLONG_V'],
+        'lat': ['lat', 'south_north', 'rlat', 'latitude', 'ny', 'y', 'XLAT', 'XLAT_U', 'XLAT_V'],
         'lev': ['height', 'bottom_top', 'lev', 'level', 'xlevel', 'lev_2'],
         'number': ['number', 'num', 'model']
         # the default name is 'number'
     }
     # attention: these keys will be used as the standard names of DataArray
 
+    # ----------------------------- important:
     # coords = list(da.dims)
     # ATTENTION: num of dims is sometimes larger than coords: WRF has bottom_top but not such coords
     # ATTENTION: according to the doc of Xarray: len(arr.dims) <= len(arr.coords) in general.
     # ATTENTION: dims names are not the same as coords, WRF dim='south_north', coords=XLAT
     # so save to use the coords names.
-    coords = list(dict(da.coords).keys())
-    dims = list(da.dims)
+    # -----------------------------
+    if name_from == 'coords':
+        da_names = list(dict(da.coords).keys())
+        # CTANG: coords should be a list not a string.
+        # since: 't' is in 'time', 'level' is in 'xlevel'
+        # and: ['t'] is not in ['time']; 't' is not in ['time']
 
-    # coords = list(da.coords._names)
-    # CTANG: coords should be a list not a string.
-    # since: 't' is in 'time', 'level' is in 'xlevel'
-    # and: ['t'] is not in ['time']; 't' is not in ['time']
+        dims = list(da.dims)
+
+    if name_from == 'dims':
+        da_names = list(da.dims)
+        dims = list(da.dims)
 
     # construct output
-    coords_names = {}
+    output_names = {}
 
     for key, possible_list in possible_coords_names.items():
-        coord_name = [x for x in possible_list if x in coords]
+        coord_name = [x for x in possible_list if x in da_names]
         if len(coord_name) == 1:
-            coords_names.update({key: coord_name[0]})
+            output_names.update({key: coord_name[0]})
         else:
             # check if this coords is missing in dims
             dim_name = [x for x in possible_list if x in dims]
             if len(dim_name) == 1:
-                coords_names.update({key: dim_name[0]})
+                output_names.update({key: dim_name[0]})
 
                 print(f'coords {key:s} not found, using dimension name: {dim_name[0]}')
                 warnings.warn('coords missing')
 
-    return coords_names
+    return output_names
 
 
 def value_cbar_max_min_of_da(da: xr.DataArray):
@@ -3567,7 +3656,11 @@ def if_same_coords(map1: xr.DataArray, map2: xr.DataArray, coords_to_check=None)
 
 def read_to_standard_da(file_path: str, var: str):
     """
-    read wrf data and change the dim names to longitude, latitude, time
+    read da and change the dim names/order to time, lon, lat, lev, number
+    - the coords may have several dims, which will be reduced to one, if the coord is not changing
+        according to other dims
+    - the order/name of output da are defined in function convert_da_standard_dims_order
+
     Parameters
     ----------
     file_path :
@@ -3581,16 +3674,19 @@ def read_to_standard_da(file_path: str, var: str):
     ds = xr.open_dataset(file_path)
 
     da = ds[var]
+
+    # change the order of dims: necessary
+    # da = convert_da_standard_dims_order(da)
+
     coords = get_time_lon_lat_from_da(da)
 
     new_coords = dict()
 
-    possible_coords = ['time', 'number', 'lev', 'lat', 'lon']
-    # do not change the order
+    possible_coords = get_possible_standard_coords()
+    # ['time', 'lat', 'lon', 'lev', 'number']
 
     for d in possible_coords:
         if d in coords:
-            # my_dict['name'] = 'Nick'
             new_coords[d] = coords[d]
 
     new_da = xr.DataArray(da.values, dims=tuple(new_coords.keys()),
@@ -3840,7 +3936,7 @@ def plot_compare_2geo_maps(map1: xr.DataArray, map2: xr.DataArray, tag1: str = '
     axes = axes.flatten()
 
     # ----------------------------- map 1 -----------------------------
-    plot_geo_map(data_map=map1, bias=0, 
+    plot_geo_map(data_map=map1, bias=0,
                  # ax=axes[0],
                  vmax=max(map1.max(), map2.max()), vmin=min(map1.min(), map2.min()))
     axes[0].text(0.93, 0.95, tag1, fontsize=12,
@@ -3850,7 +3946,7 @@ def plot_compare_2geo_maps(map1: xr.DataArray, map2: xr.DataArray, tag1: str = '
                  horizontalalignment='right', verticalalignment='bottom', transform=axes[0].transAxes)
 
     # ----------------------------- map 2 -----------------------------
-    plot_geo_map(data_map=map2, bias=0, 
+    plot_geo_map(data_map=map2, bias=0,
                  # ax=axes[1],
                  vmax=max(map1.max(), map2.max()), vmin=min(map1.min(), map2.min()))
     axes[1].text(0.93, 0.95, tag2, fontsize=12,
@@ -3862,7 +3958,7 @@ def plot_compare_2geo_maps(map1: xr.DataArray, map2: xr.DataArray, tag1: str = '
     # ----------------------------- plot bias -----------------------------
     bias_map = xr.DataArray(map1.values - map2.values, coords=[map1.lat, map1.lon], dims=map1.dims,
                             name=map1.name, attrs={'units': map1.assign_attrs().units})
-    plot_geo_map(data_map=bias_map, bias=1, 
+    plot_geo_map(data_map=bias_map, bias=1,
                  # ax=axes[2],
                  vmax=max(np.abs(bias_map.max()), np.abs(bias_map.min())),
                  vmin=min(-np.abs(bias_map.max()), -np.abs(bias_map.min())))
@@ -3885,7 +3981,7 @@ def plot_compare_2geo_maps(map1: xr.DataArray, map2: xr.DataArray, tag1: str = '
         vmax = 1000
         vmin = -1000
 
-    plot_geo_map(data_map=bias_in_percent, bias=1, 
+    plot_geo_map(data_map=bias_in_percent, bias=1,
                  # ax=axes[3], 
                  vmax=vmax, vmin=vmin)
     axes[3].text(0.93, 0.95, f'({tag1:s}-{tag2:s})/{tag2:s} %', fontsize=14,
@@ -3930,6 +4026,35 @@ def convert_df_shifttime(df: pd.DataFrame, second: int):
     new_df = pd.DataFrame(data=df.values, columns=df.columns, index=time_shifted)
 
     return new_df
+
+
+def convert_da_standard_dims_order(da: xr.DataArray):
+    """
+    read da and change the dim order to time, lon, lat, lev, number
+    however, the names are not changed
+
+    note: this function may take time when access values of da by da.values
+
+    :param da:
+    :type da:
+    :return:
+    :rtype:
+    """
+
+    dims_names = get_time_lon_lat_name_from_da(da, name_from='dims')
+
+    dims_order = []
+
+    possible_coords = get_possible_standard_coords()
+    # ['time', 'lon', 'lat', 'lev', 'number']
+
+    possible_name = [x for x in possible_coords if x in dims_names.keys()]
+    for i in range(len(dims_names)):
+        dims_order.append(dims_names[possible_name[i]])
+
+    new_da = da.transpose(*dims_order)
+
+    return new_da
 
 
 def convert_da_shifttime(da: xr.DataArray, second: int):
