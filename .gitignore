@@ -19,3 +19,4 @@ dataset/list_classes__5Regimes.csv
 /src/*.mat
 *.mat
 .hydra
+/cloud.log
