@@ -711,12 +711,11 @@ def anomaly_hourly(da: xr.DataArray, percent: int = 0) -> xr.DataArray:
     print(f'calculating hourly anomaly ... {da.name:s}')
     # todo: print out the var name
 
+    climatology = da.groupby(da.time.dt.strftime('%m-%d-%H')).mean('time')
+    anomaly = da.groupby(da.time.dt.strftime('%m-%d-%H')) - climatology
+
     if percent:
-        anomaly = (da.groupby(da.time.dt.strftime('%m-%d-%H')) -
-                   da.groupby(da.time.dt.strftime('%m-%d-%H')).mean('time')) / \
-                  da.groupby(da.time.dt.strftime('%m-%d-%H')).mean('time')
-    else:
-        anomaly = da.groupby(da.time.dt.strftime('%m-%d-%H')) - da.groupby(da.time.dt.strftime('%m-%d-%H')).mean('time')
+        anomaly = anomaly.groupby(da.time.dt.strftime('%m-%d-%H')) / climatology
 
     return_anomaly = anomaly.assign_attrs({'units': da.assign_attrs().units, 'long_name': da.assign_attrs().long_name})
 
@@ -740,10 +739,12 @@ def remove_duplicate_list(mylist: list) -> list:
 def plot_geo_subplot_map(geomap, vmin, vmax, bias, ax,
                          domain: str, tag: str,
                          plot_cbar: bool = True,
+                         type: str = 'controuf',
                          statistics: bool = 1):
     """
     plot subplot
     Args:
+        type ():
         geomap ():
         vmin ():
         vmax ():
@@ -768,8 +769,15 @@ def plot_geo_subplot_map(geomap, vmin, vmax, bias, ax,
     # vmin = geomap.min()
     cmap, norm = set_cbar(vmax=vmax, vmin=vmin, n_cbar=20, bias=bias)
 
-    cf: object = ax.contourf(geomap.lon, geomap.lat, geomap, levels=norm.boundaries,
-                             cmap=cmap, norm=norm, transform=ccrs.PlateCarree(), extend='both')
+    cf = 1
+
+    if type == 'pcolormesh':
+        cf = plt.pcolormesh(geomap.lon, geomap.lat, geomap,
+                            cmap=cmap, norm=norm, transform=ccrs.PlateCarree())
+
+    if type == 'contourf':
+        cf: object = ax.contourf(geomap.lon, geomap.lat, geomap, levels=norm.boundaries,
+                                 cmap=cmap, norm=norm, transform=ccrs.PlateCarree(), extend='both')
 
     if plot_cbar:
         cbar_label = f'{geomap.name:s} ({geomap.assign_attrs().units:s})'
@@ -788,12 +796,15 @@ def plot_geo_subplot_map(geomap, vmin, vmax, bias, ax,
 def get_data_in_classif(da: xr.DataArray, df: pd.DataFrame, significant: bool = 0, time_mean: bool = 0):
     """
     to get a new da with additional dim of classification df da and df may NOT in the same length of time.
-    Note that, this will produce a lot of nan if a multi time steps are not belonging to the same class.
+    attention: the significant is calculated for all the available data,
+        if the resolution of field is higher than classif, (hourly vs daily), all hours will get
+        the same significant
     :param time_mean:
-    :param significant:
+    :param significant: T test @0.05
     :param da: with DataTimeIndex,
     :param df: class with DataTimeIndex
     :return: in shape of (:,:,class)
+    Note: this will produce a lot of nan if a multi time steps are not belonging to the same class.
     :rtype: da with additional dim named with class number
     """
 
@@ -811,6 +822,8 @@ def get_data_in_classif(da: xr.DataArray, df: pd.DataFrame, significant: bool = 
             break
         class_1: xr.DataArray = \
             da.where(da.time.dt.strftime('%Y-%m-%d').isin(date_class_one.strftime('%Y-%m-%d')), drop=True)
+        # key word: matching, selecting, match two DataArray by index,
+        # note: works only on day, a day is a class
 
         if significant:
             sig_map = value_significant_of_anomaly_2d_mask(field_3d=class_1)
@@ -822,7 +835,7 @@ def get_data_in_classif(da: xr.DataArray, df: pd.DataFrame, significant: bool = 
         else:
             data_in_class = xr.concat([data_in_class, class_1], dim='class')
 
-        print(f'class = {cls:g}', data_in_class.shape)
+        print(f'class = {cls:g}', data_in_class.shape, data_in_class.dims)
 
     # output:
     if time_mean:
@@ -877,6 +890,8 @@ def plot_cyclone_in_classif(classif: pd.DataFrame,
                             ):
     """
     to plot classification vs cyclone
+
+    note: there is a function to select_near_by_cyclone could be used in this function.
     Args:
         cen_lat ():
         cen_lon ():
@@ -1061,7 +1076,7 @@ def plot_diurnal_boxplot_in_classif(classif: pd.DataFrame, field_1D: xr.DataArra
     df = data_in_class.to_dataframe()
     df['Hour'] = df._get_label_or_level_values('time').hour
     df['Class'] = df._get_label_or_level_values('class')
-    # key word: multilevel index, multi index
+    # key word: multilevel index, multi index, convert da to df, da2df
 
     # ----------------------------- get definitions -----------------------------
     class_names = list(set(classif.values.ravel()))
@@ -1071,7 +1086,7 @@ def plot_diurnal_boxplot_in_classif(classif: pd.DataFrame, field_1D: xr.DataArra
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 6), facecolor='w', edgecolor='k', dpi=300)
 
     seaborn.boxplot(x='Hour', y=data_in_class.name, hue='Class', data=df, ax=ax,
-                    showmeans=False, showfliers=False)
+                    showmeans=True, showfliers=False)
     # Seaborn's showmeans=True argument adds a mark for mean values in each box.
     # By default, mean values are marked in green color triangles.
 
@@ -1079,9 +1094,11 @@ def plot_diurnal_boxplot_in_classif(classif: pd.DataFrame, field_1D: xr.DataArra
         plt.axhline(y=0.0, color='r', linestyle='-', zorder=-5)
 
     if percent:
-        ax.set_ylim(-0.2, 0.2)
+        ax.set_ylim(-0.5, 0.5)
+        ax.set_ylabel(f'{data_in_class.name:s} (%)')
     else:
-        ax.set_ylim(-120, 120)
+        ax.set_ylim(-200, 200)
+        ax.set_ylabel(f'{data_in_class.name:s} ({data_in_class.units})')
 
     title = f'{field_1D.assign_attrs().long_name:s} percent={percent:g} anomaly={anomaly:g} in class'
 
@@ -1095,6 +1112,131 @@ def plot_diurnal_boxplot_in_classif(classif: pd.DataFrame, field_1D: xr.DataArra
     plt.savefig(f'./plot/diurnal.{title.replace(" ", "_"):s}.'
                 f'test_{plot_big_data_test:g}.png', dpi=300)
 
+    plt.show()
+    print(f'got plot ')
+
+
+def test_exact_mc_permutation(small, big, nmc, show:bool = True):
+    """
+    to test if two samples are same
+    Args:
+        small (): 
+        big (): 
+        nmc (): 
+
+    Returns:
+
+    """
+    n, k = len(small), 0
+    diff = np.abs(np.mean(small) - np.mean(big))
+    zs = np.concatenate([small, big])
+
+    list_diff = np.empty(nmc)
+    for j in range(nmc):
+        np.random.shuffle(zs)
+        list_diff[j] = np.abs(np.mean(zs[:n]) - np.mean(zs[n:]))
+        k += diff < np.abs(np.mean(zs[:n]) - np.mean(zs[n:]))
+
+    p = np.float(k / nmc)
+    # percentage that > than the diff = the probability to have a diff like diff of origional data
+
+    if show:
+        plt.close("all")
+        import seaborn as sns
+
+        f = plt.figure()
+        ax = f.add_subplot(111)
+
+        sns.set_palette("hls")  # 设置所有图的颜色，使用hls色彩空间
+        sns.distplot(list_diff, color="g", label='distribution', bins=30, kde=True)  # kde=true，显示拟合曲线
+        sns.ecdfplot(data=list_diff, color='r', label='ecdf')
+        plt.axvline(x=diff, color='b', linestyle='-', linewidth=2, label='mean abs diff')
+        plt.text(0.1, 0.95, f'permutation = {nmc:g}', ha='left', va='top', transform=ax.transAxes)
+        plt.title('Permutation Test')
+        plt.grid()
+        plt.xlabel('difference')
+        plt.ylabel('distribution')
+        plt.legend()
+        plt.show()
+
+    return diff, list_diff, p
+
+
+def count_nan_2d_map(map: xr.DataArray):
+    b = 0
+    for i in range(map.shape[0]):
+        for j in range(map.shape[1]):
+            if map[i, j]:
+                pass
+            else:
+                b += 1
+    return b
+
+
+def plot_diurnal_curve_in_classif(classif: pd.DataFrame, field_1D: xr.DataArray,
+                                  suptitle_add_word: str = '',
+                                  anomaly: int = 0,
+                                  percent: int = 0,
+                                  plot_big_data_test: int = 1):
+    """
+
+    Args:
+        classif ():
+        field_1D ():
+        suptitle_add_word ():
+        anomaly ():
+        percent ():
+        plot_big_data_test ():
+
+    Returns:
+
+    Applied_project:
+     Mialhe_2020
+    """
+    # ----------------------------- data -----------------------------
+    data_in_class = get_data_in_classif(da=field_1D, df=classif, time_mean=False, significant=0)
+
+    # to convert da to df: for the boxplot:
+
+    # ----------------------------- get definitions -----------------------------
+    class_names = list(set(classif.values.ravel()))
+
+    # ----------------------------- plot -----------------------------
+
+    fig = plt.figure(figsize=(10, 8), dpi=300)
+
+    for i in range(len(class_names)):
+        date_in_class = classif[classif['class'] == class_names[i]].index.date
+        data_1class = field_1D.loc[field_1D.time.dt.date.isin(date_in_class)]
+
+        y = data_1class.groupby(data_1class['time'].dt.hour).mean()
+        x = y.hour
+
+        plt.plot(x, y, label=str(class_names[i]))
+
+    plt.legend()
+    plt.grid(True)
+
+    plt.xlabel('Hour')
+
+    if percent:
+        plt.ylim(-0.2, 0.2)
+        plt.ylabel(f'{data_in_class.name:s} (%)')
+    else:
+        plt.ylim(-200, 200)
+        plt.ylabel(f'{data_in_class.name:s} ({data_in_class.units})')
+
+    title = f'{field_1D.assign_attrs().long_name:s} percent={percent:g} anomaly={anomaly:g} in class'
+
+    if suptitle_add_word is not None:
+        title = title + ' ' + suptitle_add_word
+
+    fig.suptitle(title)
+
+    # ----------------------------- end of plot -----------------------------
+
+    plt.savefig(f'./plot/diurnal.curve.{title.replace(" ", "_"):s}.'
+                f'test_{plot_big_data_test:g}.png', dpi=300)
     plt.show()
     print(f'got plot ')
 
@@ -1132,7 +1274,7 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
 
     # ----------------------------- data -----------------------------
     data_in_class = get_data_in_classif(da=field, df=classif, time_mean=False,
-                                        significant=only_significant_points)
+                                        significant=0)
     print(f'good')
     # ----------------------------- get definitions -----------------------------
     class_names = list(set(classif.values.ravel()))
@@ -1143,6 +1285,7 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
 
     # class_column_name = classif.columns.to_list()[0]
 
+    # ----------------------------- plotting -----------------------------
     fig, axs = plt.subplots(nrows=n_class, ncols=n_hour, sharex='row', sharey='col',
                             figsize=(19, 10), dpi=300, subplot_kw={'projection': ccrs.PlateCarree()})
     fig.subplots_adjust(left=0.1, right=0.85, bottom=0.02, top=0.9, wspace=0.09, hspace=0.01)
@@ -1151,14 +1294,30 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
         print(f'plot class = {cls + 1:g}')
 
         in_class = data_in_class.where(data_in_class['class'] == class_names[cls], drop=True).squeeze()
-        hourly_mean = in_class.groupby(in_class.time.dt.hour).mean(keep_attrs=True)
+        # nan comes from missing data and from non-significance
+        in_class_dropna = in_class.dropna(dim='time')
+        num_record = in_class_dropna.shape[0]
 
         for hour in range(n_hour):
 
             plt.sca(axs[cls, hour])
             ax = axs[cls, hour]
 
-            cf = plot_geo_subplot_map(geomap=hourly_mean.sel(hour=hours[hour]),
+            data_in_hour = in_class_dropna.where(in_class_dropna.time.dt.hour == hours[hour], drop=True)
+
+            if only_significant_points:
+                sig_map = value_significant_of_anomaly_2d_mask(field_3d=data_in_hour)
+                data_1h = filter_2d_by_mask(data_in_hour, mask=sig_map)
+            else:
+                data_1h = data_in_hour
+
+            data_1h_mean = data_1h.mean('time')
+            # hourly_mean = in_class.groupby(in_class.time.dt.hour).mean(keep_attrs=True)
+            # here can NOT use in_class_dropna instead of in_class for groupby, if all values are nan,
+            # got a value as Nan, otherwise (using in_class_dropna) the size of input of groupby is zero,
+            # got an error.
+
+            cf = plot_geo_subplot_map(geomap=data_1h_mean,
                                       vmax=vmax, vmin=vmin, bias=bias,
                                       plot_cbar=False,
                                       statistics=0,
@@ -1167,8 +1326,13 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
             if cls == 0:
                 ax.set_title(f'{hours[hour]:g}H00')
             if hour == 0:
-                ax.set_ylabel(f'Class_{str(class_names[cls]):s}')
-                plt.ylabel(f'Class_{str(class_names[cls]):s}')
+                plt.ylabel(f'#_{str(class_names[cls]):s} (num = {num_record:g})')
+                # TODO: add this class name/number to y axis
+                ax.text(0.9, 0.95, f'{num_record:g}', fontsize=12,
+                        horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+
+            ax.set_ylabel(f'#_{str(class_names[cls]):s}', color='b')
+            ax.set_xlabel('xxx')
 
     # ----------------------------- surface wind -----------------------------
     if plot_wind:
@@ -1236,7 +1400,8 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
 
     # ----------------------------- end of plot -----------------------------
 
-    plt.savefig(f'./plot/hourly_mean.{field.name:s}.in_class.{area:s}.'
+    plt.savefig(f'./plot/{title.replace(" ", "_"):s}'
+                f'.hourly_mean.{field.name:s}.in_class.{area:s}.'
                 f'wind_{plot_wind:g}.only_sig_{only_significant_points:g}.'
                 f'test_{plot_big_data_test:g}.png', dpi=300)
     plt.show()
@@ -1275,9 +1440,9 @@ def plot_wind_subplot(area: str,
         headwidth = 8
 
         if bias == 0:
-            n_scale = 12
-            key = 2
-            # set the n_scale to define vector length, and key for sample vector in m/s
+            n_scale = 30
+            key = 10
+            # set the n_scale to define vector length (higher value smaller vector), and key for sample vector in m/s
         else:
             n_scale = 3
             key = 0.5
@@ -2262,12 +2427,18 @@ def value_mjo_significant_map(phase: int, grid: xr.DataArray = 0, month: str = 0
     return sig
 
 
-def value_significant_of_anomaly_2d_mask(field_3d: xr.DataArray, conf_level: float = 0.05) -> xr.DataArray:
+def value_significant_of_anomaly_2d_mask(field_3d: xr.DataArray, conf_level: float = 0.05,
+                                         show: bool = True,
+                                         check_every_grid: bool = False) -> xr.DataArray:
     """
     calculate 2d map of significant of values in true false
     :param conf_level: default = 0.05
     :param field_3d: have to be in (time, lat, lon)
     :return: 2d array of true false xr.DataArray
+
+    Args:
+        check_every_grid (): to check all the pixel, since they could have nan at different times
+        show ():
     """
 
     # there's another coord beside 'longitude' 'latitude', which is the dim of significant !!!
@@ -2276,42 +2447,49 @@ def value_significant_of_anomaly_2d_mask(field_3d: xr.DataArray, conf_level: flo
     # tag, note: change order of dim:
     field_3d = field_3d.transpose(sig_coord_name, "lat", "lon")
 
-    sig_2d = np.zeros((field_3d.shape[1], field_3d.shape[2]))
+    p_map = np.zeros((field_3d.shape[1], field_3d.shape[2]))
 
-    print(f'get significant map...')
-    for lat in range(field_3d.shape[1]):
-        print(f'significant ----- {lat * 100 / len(field_3d.lat): 4.2f} % ...')
-        for lon in range(field_3d.shape[2]):
-            grid = field_3d[:, lat, lon]
+    print(f'to get significant map...')
+    if check_every_grid:
+        for lat in range(field_3d.shape[1]):
+            print(f'significant ----- {lat * 100 / len(field_3d.lat): 4.2f} % ...')
+            for lon in range(field_3d.shape[2]):
+                grid = field_3d[:, lat, lon]
 
-            if field_3d.name == 'SIS':
                 # select value not nan, removing the nan value
                 grid_nonnan = grid[np.logical_not(np.isnan(grid))]
-            else:
-                # good point
-                grid_nonnan = grid
 
-            if len(grid_nonnan) < 1:
-                print("----------------- bad point")
-                sig_2d[lat, lon] = 0
-            else:
-                t_statistic, p_value_2side = stats.ttest_1samp(grid_nonnan, 0)
-                sig_2d[lat, lon] = p_value_2side
+                # check if there's a bad grid point with all values = nan
+                # when pass a 3D values to t test with nan, it gives only nan, so better to check each pixel
+                if len(grid_nonnan) < 1:
+                    print("----------------- bad point")
+                    p_map[lat, lon] = 0
+                else:
+                    t_statistic, p_value_2side = stats.ttest_1samp(grid_nonnan, 0)
+                    p_map[lat, lon] = p_value_2side
 
-            # print(sig_2d.shape, lat, lon)
+                # print(sig_2d.shape, lat, lon)
+    else:
+        # check if the operation of dropna reduce seriously the size of data
+        field = field_3d.dropna(sig_coord_name)
+        if len(field) / len(field_3d) < 0.95:
+            sys.exit('too much nan in data check significant function')
+        t_map, p_map = stats.ttest_1samp(field, 0)
 
     # option 2:
     # 根据定义，p值大小指原假设H0为真的情况下样本数据出现的概率。
     # 在实际应用中，如果p值小于0.05，表示H0为真的情况下样本数据出现的概率小于5 %，
     # 根据小概率原理，这样的小概率事件不可能发生，因此我们拒绝H0为真的假设
-    sig_map = sig_2d < conf_level
+    sig_map = p_map < conf_level
 
     # return sig map in 2D xr.DataArray:
     sig_map_da = field_3d.mean(sig_coord_name)
     sig = xr.DataArray(sig_map.astype(bool), coords=[field_3d.lat, field_3d.lon], dims=sig_map_da.dims)
 
-    # sig.plot()
-    # plt.show()
+    if show:
+        plt.close("all")
+        sig.plot.pcolormesh(vmin=0, vmax=1)
+        plt.show()
 
     return sig
 
@@ -2648,6 +2826,8 @@ def filter_2d_by_mask(data: xr.DataArray, mask: xr.DataArray):
         # build up a xr.DataArray as mask, only type of DataArray works.
         lookup = xr.DataArray(mask, dims=('lat', 'lon'))
         # use the standard dim names 'time', 'lat', 'lon'
+
+        # lookup = xr.DataArray(mask, dims=data.dims) # possible works for 3D mask
 
         data_to_return = data.where(lookup)
 
@@ -3979,7 +4159,7 @@ def read_to_standard_da(file_path: str, var: str):
             max_coords_ndim = max(max_coords_ndim, coords[d].ndim)
 
     # to prepare dims names for data and for coords
-    possible_dims_coords = get_possible_standard_coords_dims(name_for='dims', ndim=max_coords_ndim) # 1d or 2d
+    possible_dims_coords = get_possible_standard_coords_dims(name_for='dims', ndim=max_coords_ndim)  # 1d or 2d
     possible_dims_data_1d = get_possible_standard_coords_dims(name_for='dims', ndim=1)
 
     # get new dim, for data (time, x, y) and for coords lon: [x,y] separately
@@ -4706,6 +4886,8 @@ def value_lonlatbox_from_area(area: str):
 
     if area == 'bigreu':
         box = [54, 57, -22, -20]
+    if area == 'reu':
+        box = [55, 56, -21.5, -20.5]
 
     if area == 'swio':
         box = [20, 110, -50, 9]
@@ -5149,4 +5331,4 @@ def plot_cordex_ensemble_changes_map(past: xr.DataArray, mid: xr.DataArray, end:
     plt.savefig(f'./plot/{big_title.replace(" ", "_"):s}.png', dpi=200)
     plt.show()
     print(f'done')
-# change from simu_detect
+# change from update
