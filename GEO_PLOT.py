@@ -7,7 +7,9 @@ __version__ = f'Version 1.0  \nTime-stamp: <2019-02-21>'
 __author__ = "ChaoTANG@univ-reunion.fr"
 
 import os
+import scipy
 import sys
+import yaml
 from typing import List
 import warnings
 import hydra
@@ -25,6 +27,7 @@ import matplotlib.pyplot as plt
 import cartopy.feature as cfeature
 from scipy import stats
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from statsmodels.stats.multitest import fdrcorrection as fdr_cor
 
 
 def my_coding_rules():
@@ -279,8 +282,7 @@ def find_two_bounds(vmin: float, vmax: float, n: int):
     return left, right
 
 
-@hydra.main(config_path="configs", config_name="config.ctang")
-def query_data(cfg: DictConfig, mysql_query: str, remove_missing_data=True):
+def query_data(mysql_query: str, remove_missing_data=True):
     """
     select data from DataBase
     :return: DataFrame
@@ -290,7 +292,7 @@ def query_data(cfg: DictConfig, mysql_query: str, remove_missing_data=True):
     import pymysql
     pymysql.install_as_MySQLdb()
 
-    db_connection_str = cfg.MySQLdb.db_connection_str
+    db_connection_str = 'mysql+pymysql://pepapig:123456@localhost/SWIO'
     db_connection = create_engine(db_connection_str)
 
     df: pd.DataFrame = pd.read_sql(sql=mysql_query, con=db_connection)
@@ -609,9 +611,9 @@ def convert_ttr_era5_2_olr(ttr: xr.DataArray, is_reanalysis: bool):
     if isinstance(ttr, xr.DataArray):
         # change the variable name and units
         olr = xr.DataArray(ttr.values / factor,
-                           coords=[ttr.time, ttr.lat, ttr.lon],
-                           dims=ttr.dims, name='OLR', attrs={'units': 'W m**-2',
-                                                             'long_name': 'OLR'})
+                           coords=ttr.coords,
+                           dims=ttr.dims,
+                           name='OLR', attrs={'units': 'W m**-2', 'long_name': 'OLR'})
 
     return olr
 
@@ -677,6 +679,165 @@ def multi_year_daily_mean(var: xr.DataArray):
     return ydaymean
 
 
+def check_nan_inf_da_df(df):
+    """
+    check if there's nan or inf in the dataframe or dataarray
+
+    Args:
+        df (): 
+
+    Returns:
+
+    """
+
+    if isinstance(df, xr.DataArray):
+        df = df.to_dataframe()
+
+    column_names = list(df.columns)
+
+    for i in range(len(column_names)):
+
+        num_nan = df[column_names[i]].isna().values.sum()
+        num_inf = np.isinf(df[column_names[i]]).values.sum()
+
+        print(f'{column_names[i]:s} \t has {num_nan:g} NaN, '
+              f'which is only {num_nan * 100 / df.shape[0]: 4.2f} %. Not Much. \t'
+              f'| {column_names[i]:s} \t has {num_inf:g} INF, '
+              f'which is only {num_inf * 100 / df.shape[0]: 4.2f} %. Not Much')
+
+
+def plot_violinplot_df_1D(df: pd.DataFrame, x: str, y: str, y_unit: str,
+                          x_label: str = 0, y_label: str = 0,
+                          hue: str = 0,
+                          suptitle_add_word: str = '',
+                          ):
+    """
+    plot violin plot
+    Args:
+        y_label ():
+        x_label ():
+        y_unit ():
+        df ():
+        x ():
+        y ():
+        hue ():
+        suptitle_add_word ():
+
+    Returns:
+
+    """
+
+    # definition:
+    if x_label == 0:
+        x_label = x
+    if y_label == 0:
+        y_label = y
+    if y_unit != 0:
+        y_label = f'{y_label:s} ({y_unit:s})'
+
+    from seaborn import violinplot
+
+    fig, ax = plt.subplots(figsize=(11, 6), dpi=220)
+    if hue:
+        ax = violinplot(x=x, y=y, hue=hue, data=df)
+    else:
+        ax = violinplot(x=x, y=y, data=df)
+
+    plt.grid()
+
+    plt.ylabel(f'{y:s} ({y_unit:s})')
+    title = f'{y:s} in {x:s}'
+
+    if suptitle_add_word is not None:
+        title = title + ' ' + suptitle_add_word
+
+    fig.suptitle(title)
+
+    plt.savefig(f'./plot/{title.replace(" ", "_"):s}.'
+                f'.png', dpi=300)
+
+    plt.show()
+
+
+def daily_mean_da(da: xr.DataArray):
+    """
+    calculate daily mean
+    Args:
+        da ():
+
+    Returns:
+        da
+    """
+
+    from datetime import datetime
+
+    da = da.assign_coords(strtime=da.time.dt.strftime('%Y-%m-%d'))
+    # 'strtime' could be any string
+
+    da2 = da.groupby('strtime').mean('time', keep_attrs=True)
+
+    da2 = da2.rename({'strtime': 'time'})
+
+    datetime_obj = [datetime.strptime(a, '%Y-%m-%d') for a in da2.time.values]
+
+    da2 = da2.assign_coords(time=datetime_obj)
+
+    # key word: update coords
+
+    return da2
+
+
+def get_df_of_da_in_classif(da: xr.DataArray, classif: pd.DataFrame):
+    """
+    merge classif and nd dataArray, return df, with MultiIndex
+    key word: boxplot for seaborn violin
+    Args:
+        da ():
+        classif ():
+
+    Returns:
+        dataframe
+
+    """
+
+    b: xr.DataArray = get_data_in_classif(da=da, df=classif)
+
+    list_class = list(set(classif['class'].to_list())) * np.prod(b.shape[:-1])
+
+    c = b.to_dataframe()
+
+    c['class'] = list_class
+
+    c = c.dropna()
+
+    return c
+
+
+def monthly_mean_da(da: xr.DataArray):
+    """
+    return monthly mean, the time index will be the first day of the month, so easy to match two monthly das calculated
+    by this function
+    Args:
+        da ():
+
+    Returns:
+
+    """
+
+    print(f'monthly mean...')
+
+    mean = da.groupby(da.time.dt.strftime('%Y-%m')).mean(keep_attrs=True).rename(strftime='time')
+
+    from datetime import datetime
+
+    dt = [datetime.strptime(x, '%Y-%m') for x in mean.time.values]
+    # key word: converting string to datetime
+
+    mean = mean.assign_coords(time=('time', dt))
+
+    return mean
+
+
 def anomaly_daily(da: xr.DataArray) -> xr.DataArray:
     """
     calculate daily anomaly, as the name, from the xr.DataArray
@@ -695,6 +856,35 @@ def anomaly_daily(da: xr.DataArray) -> xr.DataArray:
     return return_anomaly
 
 
+def anomaly_monthly(da: xr.DataArray, percent: int = 0) -> xr.DataArray:
+    """
+    calculate monthly anomaly, as the name, from the xr.DataArray
+    if the number of year is less than 30, better to smooth out the high frequency variance.
+    :param da:
+    :param percent: output in percentage
+    :return: da with a coordinate named 'strftime' but do not have this dim
+    dfd
+    """
+
+    if len(set(da.time.dt.year.values)) < 30:
+        warnings.warn('CTANG: input less than 30 years ... better to smooth out the high frequency variance, '
+                      'for more see project Mialhe_2020/src/anomaly.py')
+
+    print(f'calculating monthly anomaly ... {da.name:s}')
+
+    climatology = da.groupby(da.time.dt.month).mean('time')
+    anomaly = da.groupby(da.time.dt.month) - climatology
+
+    if percent:
+        anomaly = anomaly.groupby(da.time.dt.month) / climatology
+
+    return_anomaly = anomaly.assign_attrs({'units': da.assign_attrs().units, 'long_name': da.assign_attrs().long_name})
+
+    return_anomaly.rename(da.name)
+
+    return return_anomaly
+
+
 def anomaly_hourly(da: xr.DataArray, percent: int = 0) -> xr.DataArray:
     """
     calculate hourly anomaly, as the name, from the xr.DataArray
@@ -702,6 +892,7 @@ def anomaly_hourly(da: xr.DataArray, percent: int = 0) -> xr.DataArray:
     :param da:
     :param percent: output in percentage
     :return: da with a coordinate named 'strftime' but do not have this dim
+    dfd
     """
 
     if len(set(da.time.dt.year.values)) < 30:
@@ -709,7 +900,6 @@ def anomaly_hourly(da: xr.DataArray, percent: int = 0) -> xr.DataArray:
                       'for more see project Mialhe_2020/src/anomaly.py')
 
     print(f'calculating hourly anomaly ... {da.name:s}')
-    # todo: print out the var name
 
     climatology = da.groupby(da.time.dt.strftime('%m-%d-%H')).mean('time')
     anomaly = da.groupby(da.time.dt.strftime('%m-%d-%H')) - climatology
@@ -739,7 +929,7 @@ def remove_duplicate_list(mylist: list) -> list:
 def plot_geo_subplot_map(geomap, vmin, vmax, bias, ax,
                          domain: str, tag: str,
                          plot_cbar: bool = True,
-                         type: str = 'controuf',
+                         type: str = 'contourf',
                          statistics: bool = 1):
     """
     plot subplot
@@ -769,7 +959,7 @@ def plot_geo_subplot_map(geomap, vmin, vmax, bias, ax,
     # vmin = geomap.min()
     cmap, norm = set_cbar(vmax=vmax, vmin=vmin, n_cbar=20, bias=bias)
 
-    cf = 1
+    cf = 'wrong type'
 
     if type == 'pcolormesh':
         cf = plt.pcolormesh(geomap.lon, geomap.lat, geomap,
@@ -823,7 +1013,7 @@ def get_data_in_classif(da: xr.DataArray, df: pd.DataFrame, significant: bool = 
         class_1: xr.DataArray = \
             da.where(da.time.dt.strftime('%Y-%m-%d').isin(date_class_one.strftime('%Y-%m-%d')), drop=True)
         # key word: matching, selecting, match two DataArray by index,
-        # note: works only on day, a day is a class
+        # note: works only on day, a day is a class, since the format is up to day
 
         if significant:
             sig_map = value_significant_of_anomaly_2d_mask(field_3d=class_1)
@@ -1050,17 +1240,19 @@ def select_nearby_cyclone(cyc_df: pd.DataFrame,
 def plot_diurnal_boxplot_in_classif(classif: pd.DataFrame, field_1D: xr.DataArray,
                                     suptitle_add_word: str = '',
                                     anomaly: int = 0,
-                                    percent: int = 0,
+                                    relative_data: int = 0,
+                                    ylimits: str = 'default',
                                     plot_big_data_test: int = 1):
     """
 
     Args:
+        ylimits ():
         classif ():
         field_1D (): dims = time, in this func by 'data_in_class', get da in 'time' & 'class'
 
         suptitle_add_word ():
         anomaly (int): 0
-        percent (int): 0 calculate relative anomaly
+        relative_data (int): 0
         plot_big_data_test ():
 
     Returns:
@@ -1093,14 +1285,14 @@ def plot_diurnal_boxplot_in_classif(classif: pd.DataFrame, field_1D: xr.DataArra
     if anomaly:
         plt.axhline(y=0.0, color='r', linestyle='-', zorder=-5)
 
-    if percent:
-        ax.set_ylim(-0.5, 0.5)
+    ax.set_ylim(ylimits[0], ylimits[1])
+
+    if relative_data:
         ax.set_ylabel(f'{data_in_class.name:s} (%)')
     else:
-        ax.set_ylim(-200, 200)
         ax.set_ylabel(f'{data_in_class.name:s} ({data_in_class.units})')
 
-    title = f'{field_1D.assign_attrs().long_name:s} percent={percent:g} anomaly={anomaly:g} in class'
+    title = f'{field_1D.assign_attrs().long_name:s} percent={relative_data:g} anomaly={anomaly:g} in class'
 
     if suptitle_add_word is not None:
         title = title + ' ' + suptitle_add_word
@@ -1116,7 +1308,7 @@ def plot_diurnal_boxplot_in_classif(classif: pd.DataFrame, field_1D: xr.DataArra
     print(f'got plot ')
 
 
-def test_exact_mc_permutation(small, big, nmc, show:bool = True):
+def test_exact_mc_permutation(small, big, nmc, show: bool = True):
     """
     to test if two samples are same
     Args:
@@ -1160,6 +1352,129 @@ def test_exact_mc_permutation(small, big, nmc, show:bool = True):
         plt.show()
 
     return diff, list_diff, p
+
+
+def get_confidence_interval(data, alpha: float = 0.95):
+    """
+    normal distribution
+    Args:
+        data ():
+        alpha ():
+
+    Returns:
+
+    """
+    if data.shape[0] < 30:
+        warnings.warn('CTANG: num of data is too small, check and check it again')
+    else:
+        interval = stats.norm.interval(1 - alpha, np.mean(data), np.std(data))
+
+    return interval
+
+
+def cal_daily_total_energy(da: xr.DataArray, energy_unit: str = 'kWh'):
+    """
+
+    Args:
+        energy_unit ():
+        da (): with time, lon, lat, which will be interpolated into 24 hours per day
+
+    Returns:
+        da: DataArray, in unit of MJ/m2/day
+
+    """
+
+    print(f'interpolating into 24-hour/day ... to calculate the daily total energy density...')
+
+    dates = list(set(da.time.dt.strftime('%Y-%m-%d').values))
+    hours = [pd.date_range(start=x, periods=24, freq='H') for x in dates]
+    hourly_da = da.interp(time=np.sort(np.array(hours).flatten()),
+                          method='linear', kwargs={"fill_value": "extrapolate"})
+
+    b = hourly_da.groupby(hourly_da.time.dt.strftime('%Y-%m-%d')).sum(dim='time')
+
+    b = b.rename({"strftime": 'time'})
+    b = b.assign_coords(time=('time', pd.DatetimeIndex(b.time)))
+
+    # convert the units: works only we have 24 hours in a day:
+    if energy_unit == 'kWh':
+        b /= 1000
+        b = b.assign_attrs({"unit": "kWh/m2/day"})
+    if energy_unit == 'MJ':
+        b = b * 3600 / 10E6
+        b = b.assign_attrs({"unit": "MJ/m2/day"})
+
+    # attrs will be gone after numerical calculation so do it at last
+    b = b.assign_attrs({"long_name": "daily_total_energy_density"})
+
+    return b
+
+
+
+
+
+# def magnitude(a, b):
+# ...     func = lambda x, y: np.sqrt(x ** 2 + y ** 2)
+# ...     return xr.apply_ufunc(func, a, b)
+
+
+
+def plot_climate_index(x: np.ndarray, y, index_name: str, alpha=0.5,
+                       x_label: str = 'time', y_label: str = 'index',
+                       title_add_word: str = '',
+                       scatter: bool = False,
+                       ):
+    """
+    plot climate index
+    Args:
+        scatter ():
+        title_add_word ():
+        y_label ():
+        x_label (): 
+        index_name (): 
+        x ():
+        y ():
+        alpha (): conf_interval: if 0.1 means
+
+    Returns:
+
+    """
+
+    fig, ax = plt.subplots(figsize=(12, 8), dpi=300)
+    plt.plot(x, y, label=index_name)
+
+    down, up = get_confidence_interval(y, alpha=alpha)
+
+    if np.abs(down) != np.abs(up):
+        plt.text(0.05, 0.05, 'up and bottom limits are different since the mean is not zero', color='r',
+                 horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
+
+    plt.hlines(up, x[0], x[-1], colors='black', linewidth=1, linestyles='dashed')
+    plt.hlines(down, x[0], x[-1], colors='black', linewidth=1, linestyles='dashed')
+
+    plt.fill_between(x, up, y, where=(y > up), interpolate=True, color='r', label='percentile = ' + f'{alpha:4.2f}')
+    plt.fill_between(x, down, y, where=(y < down), interpolate=True, color='r')
+
+    if scatter:
+        plt.scatter(x, y, marker='^', color='green')
+
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+
+    plt.legend()
+
+    title = index_name
+
+    if title_add_word is not None:
+        title = title + ' ' + title_add_word
+
+    plt.title(title)
+
+    # ----------------------------- end of plot -----------------------------
+
+    plt.savefig(f'./plot/index.{title.replace(" ", "_"):s}.'
+                f'percentile_{alpha:4.2f}.png', dpi=300)
+    plt.show()
 
 
 def count_nan_2d_map(map: xr.DataArray):
@@ -1275,6 +1590,7 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
     # ----------------------------- data -----------------------------
     data_in_class = get_data_in_classif(da=field, df=classif, time_mean=False,
                                         significant=0)
+    # when the data freq is not the freq as cla
     print(f'good')
     # ----------------------------- get definitions -----------------------------
     class_names = list(set(classif.values.ravel()))
@@ -1328,8 +1644,8 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
             if hour == 0:
                 plt.ylabel(f'#_{str(class_names[cls]):s} (num = {num_record:g})')
                 # TODO: add this class name/number to y axis
-                ax.text(0.9, 0.95, f'{num_record:g}', fontsize=12,
-                        horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+                # ax.text(0.9, 0.95, f'num={num_record:g}', fontsize=12,
+                #         horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
 
             ax.set_ylabel(f'#_{str(class_names[cls]):s}', color='b')
             ax.set_xlabel('xxx')
@@ -1338,19 +1654,16 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
     if plot_wind:
         print(f'plot surface wind ...')
 
-        print(f'loading data ... ')
+        print(f'loading wind data ... ')
         warnings.warn('CTANG: load data from 1999-2016, make sure that the data period is correct,'
                       ' check and check it again')
 
-        local_data = '/Users/ctang/local_data/era5/Mialhe_2020'
-        # u = read_to_standard_da(f'{local_data:s}/'
-        #                         f'u10.hourly.era5_land.1981-2018.{area:s}.NDJF.local_day_time.nc', 'u10')
-        # v = read_to_standard_da(f'{local_data:s}/'
-        #                         f'v10.hourly.era5_land.1981-2018.{area:s}.NDJF.local_day_time.nc', 'v10')
-        u = read_to_standard_da(f'{local_data:s}/'
-                                f'u10.hourly.era5.1979-2018.{area:s}.NDJF.local_day_time.nc', 'u10')
-        v = read_to_standard_da(f'{local_data:s}/'
-                                f'v10.hourly.era5.1979-2018.{area:s}.NDJF.local_day_time.nc', 'v10')
+        local_data = '/Users/ctang/local_data/era5'
+        u_file = f'{local_data:s}/u10/u10.hourly.era5.1999-2016.{area:s}.local_daytime.nc'
+        v_file = f'{local_data:s}/v10/v10.hourly.era5.1999-2016.{area:s}.local_daytime.nc'
+
+        u = read_to_standard_da(u_file, 'u10')
+        v = read_to_standard_da(v_file, 'v10')
         # classif OLR is from 1979 to 2018.
 
         if plot_big_data_test:
@@ -1440,8 +1753,8 @@ def plot_wind_subplot(area: str,
         headwidth = 8
 
         if bias == 0:
-            n_scale = 30
-            key = 10
+            n_scale = 20
+            key = 5
             # set the n_scale to define vector length (higher value smaller vector), and key for sample vector in m/s
         else:
             n_scale = 3
@@ -1477,9 +1790,9 @@ def plot_wind_subplot(area: str,
                             # to get what you want now
                             color='blue', zorder=2, **quiver_kwargs)
 
-    ax.quiverkey(circulation, 0.08, 0.90, key, f'{key:g}' + r'$ {m}/{s}$',
+    ax.quiverkey(circulation, 0.08, 0.1, key, f'{key:g}' + r'$ {m}/{s}$',
                  labelpos='E',
-                 coordinates='axes')
+                 color='r', labelcolor='r', coordinates='axes')
     # ----------------------------- end of plot wind -----------------------------
 
 
@@ -1514,6 +1827,12 @@ def plot_field_in_classif(field: xr.DataArray, classif: pd.DataFrame,
     :rtype: None
     """
 
+    # ----------------------------- get definitions -----------------------------
+    class_names = list(set(classif.values.ravel()))
+    n_class = len(class_names)
+
+    total_num = len(classif)
+
     # ----------------------------- data -----------------------------
     class_mean = get_data_in_classif(da=field, df=classif,
                                      time_mean=True,
@@ -1522,9 +1841,19 @@ def plot_field_in_classif(field: xr.DataArray, classif: pd.DataFrame,
 
     # ----------------------------- plot -----------------------------
 
-    fig, axs = plt.subplots(nrows=4, ncols=2, sharex='row', sharey='col',
+    if n_class < 4:
+        ncols = 1
+    else:
+        ncols = 2
+
+    nrows = 1
+    while nrows * ncols < n_class:
+        nrows += 1
+    # key word: find figure matrix setup automatic
+
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex='row', sharey='col',
                             figsize=(12, 15), dpi=220, subplot_kw={'projection': ccrs.PlateCarree()})
-    fig.subplots_adjust(left=0.1, right=0.85, bottom=0.12, top=0.9, wspace=0.09, hspace=0.01)
+    fig.subplots_adjust(left=0.1, right=0.85, bottom=0.12, top=0.9, wspace=0.09, hspace=0.1)
     # axs = axs.flatten()
     axs = axs.ravel()
 
@@ -1532,33 +1861,41 @@ def plot_field_in_classif(field: xr.DataArray, classif: pd.DataFrame,
         cls = class_mean['class'].values[c]
         print(f'plot in class {cls:g} ...')
 
+        num = len(classif[classif['class'] == cls])
+
         ax = set_active_axis(axs=axs, n=c)
         set_basemap(area=area, ax=ax)
 
-        plt.title('#' + str(int(cls)), fontsize=14, pad=3)
+        plt.title('#' + str(int(cls)), fontsize=18, pad=3)
 
         cmap, norm = set_cbar(vmax=vmax, vmin=vmin, n_cbar=20, bias=bias)
 
         cf = plt.contourf(field.lon, field.lat, class_mean[:, :, c], levels=norm.boundaries,
                           cmap=cmap, norm=norm, transform=ccrs.PlateCarree(), extend='both')
 
+        fldmean = class_mean[:, :, c].mean().values
+        ax.text(0.05, 0.95, f'num = {num:4.2f}, ({num * 100 / total_num: 4.2f}%)', fontsize=16,
+                horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
+        ax.text(0.9, 0.05, f'mean = {fldmean:4.2f}', fontsize=16,
+                horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
     # ----------------------------- end of plot -----------------------------
     cb_ax = fig.add_axes([0.13, 0.1, 0.7, 0.015])
     cbar_label = f'{field.assign_attrs().long_name:s} ({field.assign_attrs().units:s})'
-    plt.colorbar(cf, orientation='horizontal', shrink=0.7, pad=0.05, label=cbar_label, cax=cb_ax)
+    cb = plt.colorbar(cf, orientation='horizontal', shrink=0.7, pad=0.05, label=cbar_label, cax=cb_ax)
+    cb.ax.tick_params(labelsize='large')
 
     # ----------------------------- surface wind -----------------------------
     if plot_wind:
         print(f'plot surface wind ...')
 
-        print(f'loading data ... ')
+        print(f'loading wind data ... ')
 
         local_data = '/Users/ctang/local_data/era5'
         u = read_to_standard_da(f'{local_data:s}/u10/u10.hourly.1999-2016.swio.day.nc', 'u10')
         v = read_to_standard_da(f'{local_data:s}/v10/v10.hourly.1999-2016.swio.day.nc', 'v10')
 
-        u = anomaly_daily(u)
-        v = anomaly_daily(v)
+        # u = anomaly_daily(u)
+        # v = anomaly_daily(v)
 
         u = get_data_in_classif(u, classif, significant=False, time_mean=True)
         v = get_data_in_classif(v, classif, significant=False, time_mean=True)
@@ -1570,37 +1907,6 @@ def plot_field_in_classif(field: xr.DataArray, classif: pd.DataFrame,
         # taking every 4th point in x and y). The quiver_kwargs are parameters to control the
         # appearance of the quiver so that they stay consistent between the calls.
 
-        if area == 'bigreu':
-            n_sclice = None
-            headlength = 5
-            headwidth = 8
-
-            if bias == 0:
-                n_scale = 3
-                key = 10
-            else:
-                n_scale = 3
-                key = 0.5
-
-        if area == 'SA_swio':
-            headlength = 5
-            headwidth = 3
-            n_sclice = 8
-
-            if bias == 0:
-                n_scale = 3
-                key = 10
-            else:
-                n_scale = 0.3
-                key = 1
-
-        quiver_slices = slice(None, None, n_sclice)
-        quiver_kwargs = {'headlength': headlength,
-                         'headwidth': headwidth,
-                         'angles': 'uv', 'units': 'xy',
-                         'scale': n_scale}
-        # a smaller scale parameter makes the arrow longer.
-
         # plot in subplot:
         for c in range(len(class_mean['class'])):
             cls = class_mean['class'].values[c]
@@ -1611,15 +1917,11 @@ def plot_field_in_classif(field: xr.DataArray, classif: pd.DataFrame,
             u_1 = u[:, :, c]
             v_1 = v[:, :, c]
 
-            circulation = ax.quiver(u_1.lon.values[quiver_slices],
-                                    u_1.lat.values[quiver_slices],
-                                    u_1.values[quiver_slices, quiver_slices],
-                                    v_1.values[quiver_slices, quiver_slices],
-                                    color='blue', zorder=2, **quiver_kwargs)
-
-            ax.quiverkey(circulation, 0.08, 0.90, key, f'{key:g}' + r'$ {m}/{s}$',
-                         labelpos='E',
-                         coordinates='axes')
+            plot_wind_subplot(area='bigreu',
+                              lon=u_1.lon, lat=v_1.lat,
+                              u=u_1, v=v_1,
+                              ax=ax, bias=0)
+            # by default plot mean circulation, not anomaly
 
         # ----------------------------- end of plot -----------------------------
         suptitle_add_word += ' (surface wind)'
@@ -1629,8 +1931,9 @@ def plot_field_in_classif(field: xr.DataArray, classif: pd.DataFrame,
     if suptitle_add_word is not None:
         title = title + ' ' + suptitle_add_word
 
-    fig.suptitle(title)
-    plt.savefig(f'plot/{field.name:s}_{area:s}_sig{only_significant_points:g}_wind{plot_wind:g}_classif.png', dpi=220)
+    fig.suptitle(title, fontsize=16)
+    plt.savefig(f'plot/{field.name:s}_{area:s}_sig{only_significant_points:g}_wind{plot_wind:g}_classif.'
+                f'{title.replace(" ", "_"):s}.png', dpi=220)
     plt.show()
     print(f'got plot')
 
@@ -2068,7 +2371,7 @@ def plot_mjo_phase(mjo_phase: pd.DataFrame, olr: xr.DataArray, high_amplitude: b
     :param month:
     :param mjo_phase:
     :param high_amplitude: if plot high amplitude > 1
-    :param olr:
+    :param olr: has to input olr, anomaly and mean both needed.
     :return:
     """
     # ----------------------------- prepare the data -----------------------------
@@ -2080,7 +2383,7 @@ def plot_mjo_phase(mjo_phase: pd.DataFrame, olr: xr.DataArray, high_amplitude: b
     olr = filter_xr_by_month(data=olr, month=month)
     olr_daily_anomaly = anomaly_daily(olr)
 
-    olr_daily_anomaly.to_netcdf(f'./mjo.anomaly.test.nc')
+    # olr_daily_anomaly.to_netcdf(f'./mjo.anomaly.test.nc')
 
     mjo_phase = filter_df_by_month(data=mjo_phase, month=month)
 
@@ -2111,7 +2414,11 @@ def plot_mjo_phase(mjo_phase: pd.DataFrame, olr: xr.DataArray, high_amplitude: b
         olr_mean = olr_1phase.mean(axis=0)
 
         if only_significant_points:
-            sig_map: xr.DataArray = value_mjo_significant_map(phase=phase, grid=anomaly_mean, month=month)
+            # sig_map: xr.DataArray = value_mjo_significant_map(phase=phase, grid=anomaly_mean, month=month)
+            # above is the old function, I can not remember why
+            sig_map: xr.DataArray = value_significant_of_anomaly_2d_mask(
+                field_3d=anomaly_olr_1phase, conf_level=0.05, show=0)
+
             # olr_mean = filter_2d_by_mask(olr_mean, mask=sig_map)
             anomaly_mean = filter_2d_by_mask(anomaly_mean, mask=sig_map)
             # to fix type
@@ -2123,7 +2430,7 @@ def plot_mjo_phase(mjo_phase: pd.DataFrame, olr: xr.DataArray, high_amplitude: b
         # ----------------------------- start to plot -----------------------------
         plt.title('#' + str(phase) + '/' + str(8), pad=3)
 
-        lon, lat = np.meshgrid(anomaly_mean.longitude, anomaly_mean.latitude)
+        lon, lat = np.meshgrid(anomaly_mean.lon, anomaly_mean.lat)
         level_anomaly = np.arange(-50, 51, 5)
         cf1 = plt.contourf(lon, lat, anomaly_mean, level_anomaly, cmap='PuOr_r', vmax=50, vmin=-50)
         level_olr = np.arange(140, 280, 20)
@@ -2152,7 +2459,7 @@ def plot_mjo_phase(mjo_phase: pd.DataFrame, olr: xr.DataArray, high_amplitude: b
     # cb_ax = fig.add_axes([0.13, 0.1, 0.7, 0.015])
     # cb = plt.colorbar(cf1, orientation='horizontal', shrink=0.7, pad=0.05, label=cbar_label, cax=cb_ax)
 
-    plt.savefig(f'./mjo_phases_sig_{only_significant_points:g}.png', dpi=220)
+    plt.savefig(f'./plot/mjo_phases_sig_{only_significant_points:g}.png', dpi=220)
 
     plt.show()
     print(f'got plot')
@@ -2379,7 +2686,7 @@ def value_mjo_significant_map(phase: int, grid: xr.DataArray = 0, month: str = 0
 
     # ----------------------------- read necessary data: era5 ttr reanalysis data
     # ttr_swio = xr.open_dataset(f'~/local_data/era5/ttr.era5.1999-2016.day.swio.nc')['ttr']
-    ttr_swio = xr.open_dataset(f'~/local_data/era5/ttr.era5.1999-2016.day.reu.nc')['ttr']
+    ttr_swio = read_to_standard_da(f'./local_data/era5/ttr.era5.1999-2016.day.swio.nc', var='ttr')
 
     if isinstance(month, str):
         ttr_swio = filter_xr_by_month(ttr_swio, month=month)
@@ -2398,38 +2705,40 @@ def value_mjo_significant_map(phase: int, grid: xr.DataArray = 0, month: str = 0
     sig_map_olr: xr.DataArray = value_significant_of_anomaly_2d_mask(field_3d=olr_swio_anomaly_1phase, conf_level=0.05)
 
     # to see if remap is necessary:
-    if isinstance(grid, int):
-        new_sig_map = sig_map_olr
+    if grid == 0:
+        sig = sig_map_olr.copy()
+        # no remap
 
     else:
 
         new_sig_map = np.zeros(grid.shape)
-        old_lon = olr_swio.longitude
-        old_lat = olr_swio.latitude
+        old_lon = olr_swio.lon
+        old_lat = olr_swio.lat
 
-        new_lon = grid.longitude.values
-        new_lat = grid.latitude.values
+        new_lon = grid.lon.values
+        new_lat = grid.lat.values
 
         # get closest lon:
-        for lon in range(grid.longitude.size):
+        for lon in range(grid.lon.size):
             new_lon[lon] = old_lon[np.abs(old_lon - new_lon[lon]).argmin()]
         # get closest lat:
-        for lat in range(grid.latitude.size):
+        for lat in range(grid.lat.size):
             new_lat[lat] = old_lat[np.abs(old_lat - new_lat[lat]).argmin()]
 
-        for lat in range(grid.latitude.size):
-            for lon in range(grid.longitude.size):
-                new_sig_map[lat, lon] = sig_map_olr.loc[dict(latitude=new_lat[lat], longitude=new_lon[lon])].values
+        for lat in range(grid.lat.size):
+            for lon in range(grid.lon.size):
+                new_sig_map[lat, lon] = sig_map_olr.where((sig_map_olr.lat == new_lat[lat]) &
+                                                          (sig_map_olr.lon == new_lon[lon]), drop=True).values
 
-    # return sig map in 2D xr.DataArray:
-    sig = xr.DataArray(new_sig_map.astype(bool), coords=[grid.latitude, grid.longitude], dims=grid.dims)
+        sig = xr.DataArray(new_sig_map.astype(bool), coords=[grid.lat, grid.lon], dims=grid.dims)
 
     return sig
 
 
 def value_significant_of_anomaly_2d_mask(field_3d: xr.DataArray, conf_level: float = 0.05,
                                          show: bool = True,
-                                         check_every_grid: bool = False) -> xr.DataArray:
+                                         fdr_correction: bool = True,
+                                         check_nan_every_grid: bool = False) -> xr.DataArray:
     """
     calculate 2d map of significant of values in true false
     :param conf_level: default = 0.05
@@ -2437,20 +2746,25 @@ def value_significant_of_anomaly_2d_mask(field_3d: xr.DataArray, conf_level: flo
     :return: 2d array of true false xr.DataArray
 
     Args:
-        check_every_grid (): to check all the pixel, since they could have nan at different times
+        fdr_correction (): if do a false discoveries rate correction
+        check_nan_every_grid (): to check all the pixel, since they could have nan at different times
         show ():
     """
 
-    # there's another coord beside 'longitude' 'latitude', which is the dim of significant !!!
-    sig_coord_name = [x for x in field_3d.dims if x not in ['lon', 'lat']][0]
+    # change the order of dims
+    transpose_dims = ['y', 'x']
+
+    # there's another coord beside 'y' and 'x', which is the dim of significant !!!
+    sig_coord_name = [x for x in field_3d.dims if x not in transpose_dims][0]
 
     # tag, note: change order of dim:
-    field_3d = field_3d.transpose(sig_coord_name, "lat", "lon")
+    new_dims = [sig_coord_name] + transpose_dims
+    field_3d = field_3d.transpose(*new_dims)
 
     p_map = np.zeros((field_3d.shape[1], field_3d.shape[2]))
 
     print(f'to get significant map...')
-    if check_every_grid:
+    if check_nan_every_grid:
         for lat in range(field_3d.shape[1]):
             print(f'significant ----- {lat * 100 / len(field_3d.lat): 4.2f} % ...')
             for lon in range(field_3d.shape[2]):
@@ -2465,6 +2779,7 @@ def value_significant_of_anomaly_2d_mask(field_3d: xr.DataArray, conf_level: flo
                     print("----------------- bad point")
                     p_map[lat, lon] = 0
                 else:
+                    # t-test
                     t_statistic, p_value_2side = stats.ttest_1samp(grid_nonnan, 0)
                     p_map[lat, lon] = p_value_2side
 
@@ -2472,9 +2787,27 @@ def value_significant_of_anomaly_2d_mask(field_3d: xr.DataArray, conf_level: flo
     else:
         # check if the operation of dropna reduce seriously the size of data
         field = field_3d.dropna(sig_coord_name)
-        if len(field) / len(field_3d) < 0.95:
-            sys.exit('too much nan in data check significant function')
+        if len(field) / len(field_3d) < 0.98:
+            sys.exit('too much nan, > 2% in data check significant function')
         t_map, p_map = stats.ttest_1samp(field, 0)
+
+    if fdr_correction:
+        rejected, pvalue_corrected = \
+            fdr_cor(p_map.ravel(), alpha=conf_level, method='indep', is_sorted=False)
+
+        # method{‘i’, ‘indep’, ‘p’, ‘poscorr’, ‘n’, ‘negcorr’}, optional
+        # Which method to use for FDR correction.
+        # {'i', 'indep', 'p', 'poscorr'} all refer to fdr_bh (Benjamini/Hochberg
+        # for independent or positively correlated tests).
+        # {'n', 'negcorr'} both refer to fdr_by (Benjamini/Yekutieli for
+        # general or negatively correlated tests). Defaults to 'indep'.
+
+        rejected = rejected.reshape(p_map.shape)
+        pvalue_corrected = pvalue_corrected.reshape(p_map.shape)
+        print(f'correction of FDR is made')
+
+        # update p_map with fdr corrections
+        p_map = pvalue_corrected
 
     # option 2:
     # 根据定义，p值大小指原假设H0为真的情况下样本数据出现的概率。
@@ -2484,12 +2817,50 @@ def value_significant_of_anomaly_2d_mask(field_3d: xr.DataArray, conf_level: flo
 
     # return sig map in 2D xr.DataArray:
     sig_map_da = field_3d.mean(sig_coord_name)
-    sig = xr.DataArray(sig_map.astype(bool), coords=[field_3d.lat, field_3d.lon], dims=sig_map_da.dims)
+    sig = xr.DataArray(sig_map.astype(bool), coords=sig_map_da.coords, dims=sig_map_da.dims)
 
     if show:
         plt.close("all")
         sig.plot.pcolormesh(vmin=0, vmax=1)
         plt.show()
+
+    return sig
+
+
+def welch_test(a: xr.DataArray, b: xr.DataArray, conf_level: float = 0.95, equal_var: bool = False,
+               show: bool = True, title: str = 'default'):
+    """
+    two samples test
+    Args:
+        a ():
+        b ():
+        conf_level ():
+        equal_var ():
+        show ():
+        title ():
+
+    Returns:
+
+    """
+
+    # plot welch's test:
+    t_sta, p_2side = scipy.stats.ttest_ind(a, b, equal_var=False)
+
+    da1 = xr.zeros_like(a[-1])
+    da1[:] = p_2side
+
+    sig = da1 < conf_level
+    sig = sig.assign_attrs(dict(units='significance'))
+
+    if show:
+        plt.close("all")
+        sig.plot.pcolormesh(vmin=0, vmax=1)
+        plt.title(title)
+        plt.savefig(f'./plot/welch_test.{title.replace(" ", "_"):s}.'
+                    f'.png', dpi=300)
+
+        plt.show()
+
 
     return sig
 
@@ -2717,7 +3088,7 @@ def tag_from_str(string: str):
     return tag_dict[string]
 
 
-def print_data(data, dim: int = 2):
+def print_data(data, dim: int = 1):
     """
     print all data
     :param dim:
@@ -2728,7 +3099,6 @@ def print_data(data, dim: int = 2):
 
     if dim == 1:
         for i in range(data.shape[0]):
-            print(f'# {i:g} \t')
             print(data[i])
 
     if dim == 2:
@@ -2824,14 +3194,32 @@ def filter_2d_by_mask(data: xr.DataArray, mask: xr.DataArray):
 
     if isinstance(data, xr.DataArray):
         # build up a xr.DataArray as mask, only type of DataArray works.
-        lookup = xr.DataArray(mask, dims=('lat', 'lon'))
-        # use the standard dim names 'time', 'lat', 'lon'
+        lookup = xr.DataArray(mask, dims=('y', 'x'))
+        # use the standard dim names 'time', 'y', 'x'
 
         # lookup = xr.DataArray(mask, dims=data.dims) # possible works for 3D mask
 
         data_to_return = data.where(lookup)
 
     return data_to_return
+
+
+def select_land_only_reunion_by_altitude(da: xr.DataArray):
+    """
+    select a area for only reunion
+    Args:
+        da ():
+
+    Returns:
+        da with nan
+    """
+
+    altitude = value_altitude_from_lonlat_reunion(lon=da.lon.values, lat=da.lat.values)
+    lookup = altitude > 0
+
+    new_da = da.where(lookup).dropna(dim='y', how='all').dropna(dim='x', how='all')
+
+    return new_da
 
 
 def value_month_from_str(month: str):
@@ -3061,7 +3449,7 @@ def get_time_lon_lat_name_from_da(da: xr.DataArray,
     """
     # definitions:
     possible_coords_names = {
-        'time': ['time', 'datetime', 'XTIME', 'Time'],
+        'time': ['time', 'datetime', 'XTIME', 'Time', 'WEDCEN2'],
         'lon': ['lon', 'west_east', 'rlon', 'longitude', 'nx', 'x', 'XLONG', 'XLONG_U', 'XLONG_V'],
         'lat': ['lat', 'south_north', 'rlat', 'latitude', 'ny', 'y', 'XLAT', 'XLAT_U', 'XLAT_V'],
         'lev': ['height', 'bottom_top', 'lev', 'level', 'xlevel', 'lev_2'],
@@ -4029,49 +4417,111 @@ def convert_cordex_ensemble_2_standard_da(
     print(f'all done, the data {window:s} is in ./data/{var:s}/')
 
 
-def plot_geo_map(data_map: xr.DataArray, bias: int, vmax: np.float = 100, vmin: np.float = 0,
+def plot_geo_map(data_map: xr.DataArray,
+                 bias: int = 0,
+                 grid: bool = 1,
+                 grid_num: int = 10,
+                 plt_limits: str = 'default',
+                 cb_limits: str = 'default',
+                 plt_type: str = 'pcolormesh',
                  suptitle_add_word: str = None):
     """
-    plot geo map in the axis = ax
-    :param suptitle_add_word:
-    :type suptitle_add_word:
-    :param vmin:
-    :param vmax:
-    :param bias:
-    :param data_map:
-    :return:
+    
+    Args:
+        grid ():
+        grid_num ():
+        data_map ():
+        bias (): 
+        plt_limits (): 
+        cb_limits (): 
+        plt_type (): 
+        suptitle_add_word (): 
+
+    Returns:
+
     """
 
-    fig = plt.figure(dpi=220)
+    fig = plt.figure(figsize=(8, 8), dpi=220)
     ax = plt.subplot(1, 1, 1, projection=ccrs.PlateCarree())
 
-    set_basemap(ax, area='d_1km')
+    if plt_limits == 'default':
+        lon = data_map.lon.values
+        lat = data_map.lat.values
+        area = [
+            np.min(lon), np.max(lon),
+            np.min(lat), np.max(lat)]
+    else:
+        # limits = [x1, x2, y1, y2]
+        area = plt_limits
+
+    ax.set_extent(area, crs=ccrs.PlateCarree())
+    # lon_left, lon_right, lat_north, lat_north
+
+    ax.coastlines('50m')
+    ax.add_feature(cfeature.LAND.with_scale('10m'))
+
     if bias == 1:
         how = 'anomaly_mean'
     else:
         how = 'time_mean'
 
     # if max and min is default, then use the value in my table:
-    if vmax == 100:
-        if vmin == 0:
+    if cb_limits == 'default':
+        vmax, vmin = np.max(data_map), np.min(data_map)
+    else:
+        if cb_limits == 'defined':
             vmax, vmin = value_max_min_of_var(var=str(data_map.name), how=how)
+        else:
+            vmin = cb_limits[0]
+            vmax = cb_limits[1]
 
-    cmap, norm = set_cbar(vmax=vmax, vmin=vmin, n_cbar=20, bias=bias)
+    cmap, norm = set_cbar(vmax=vmax, vmin=vmin, n_cbar=10, bias=bias)
 
     lon = get_time_lon_lat_from_da(data_map)['lon']
     lat = get_time_lon_lat_from_da(data_map)['lat']
 
-    cf: object = ax.contourf(lon, lat, data_map, levels=norm.boundaries,
-                             cmap=cmap, norm=norm, transform=ccrs.PlateCarree(), extend='both')
+    if plt_type == 'pcolormesh':
+        cf = plt.pcolormesh(lon, lat, data_map, cmap=cmap, norm=norm, transform=ccrs.PlateCarree())
+
+    if plt_type == 'contourf':
+        cf: object = ax.contourf(lon, lat, data_map, levels=norm.boundaries,
+                                 cmap=cmap, norm=norm, transform=ccrs.PlateCarree(), extend='both')
 
     cbar_label = f'{data_map.name:s} ({data_map.assign_attrs().units:s})'
     # cb_ax = ax.add_axes([0.87, 0.2, 0.01, 0.7])
     # cb = plt.colorbar(cf, orientation='vertical', shrink=0.8, pad=0.05, label=cbar_label)
-    cb = plt.colorbar(cf, orientation='horizontal', shrink=0.8, pad=0.05, label=cbar_label)
+    cb = plt.colorbar(cf, orientation='horizontal', shrink=0.8, pad=0.1, label=cbar_label)
 
-    print(fig, cb)
+    if grid:
+        ax.grid()
 
-    title = data_map.assign_attrs().long_name.replace(" ", "_") + f' {how:s}'
+    # set lon and lat ----------------------------- set ticks
+    reso = np.array([0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 1, 1.5, 2, 2.5, 3])
+    reso_x = (area[1] - area[0]) / grid_num
+    reso_x_plot = reso[(np.abs(reso - reso_x)).argmin()]
+
+    reso_y = (area[3] - area[2]) / grid_num
+    reso_y_plot = reso[(np.abs(reso - reso_y)).argmin()]
+
+    ax.set_xticks(np.arange(
+        (area[0] // reso_x_plot) * reso_x_plot,
+        area[1] + reso_x_plot,
+        reso_x_plot), crs=ccrs.PlateCarree())
+
+    ax.set_yticks(np.arange(
+        (area[2] // reso_y_plot) * reso_y_plot,
+        area[-1] + reso_y_plot,
+        reso_y_plot), crs=ccrs.PlateCarree())
+
+    from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
+
+    lon_formatter = LongitudeFormatter(zero_direction_label=True)
+    lat_formatter = LatitudeFormatter()
+    ax.xaxis.set_major_formatter(lon_formatter)
+    ax.yaxis.set_major_formatter(lat_formatter)
+    # ----------------------------- set ticks
+
+    title = data_map.assign_attrs().long_name.replace(" ", "_")
 
     if suptitle_add_word is not None:
         title = title + ' ' + suptitle_add_word
@@ -4082,6 +4532,29 @@ def plot_geo_map(data_map: xr.DataArray, bias: int, vmax: np.float = 100, vmin: 
     plt.savefig(f'./plot/{data_map.name:s}.{title.replace(" ", "_"):s}.png', dpi=220)
     plt.show()
     print(f'got plot ')
+
+
+def test_pixel_position_python():
+    """
+    to test if the plt.pcolormesh will plot the pixel with lon and lat in it's central point
+    Returns:
+
+    """
+
+    # get era5 data:
+    file_path = f'~/local_data/era5/u10/u10.hourly.era5.1999-2016.bigreu.local_daytime.nc'
+    u = read_to_standard_da(file_path, 'u10')
+
+    map_2d = u[5, 8:10, 5:7]
+    plot_geo_map(data_map=map_2d, plt_limits=[55, 56, -21.5, -20.5],
+                 cb_limits=[-1.2, 1.2])
+    print(map_2d.lon, map_2d.lat)
+
+    # test also pcolormesh in dataarray:
+    map_2d.plot.pcolormesh()
+    plt.show()
+
+    print(f'conclusion: matplotlib will plot the lon and lat in the center of pixels')
 
 
 def if_same_coords(map1: xr.DataArray, map2: xr.DataArray, coords_to_check=None):
@@ -4119,7 +4592,26 @@ def if_same_coords(map1: xr.DataArray, map2: xr.DataArray, coords_to_check=None)
     return same
 
 
-def read_to_standard_da(file_path: str, var: str):
+def add_timezone_da(da: xr.DataArray, timezone_str: str):
+
+    """
+    this function is not yet tested
+    Args:
+        da ():
+        timezone_str ():
+
+    Returns:
+
+    """
+    times = pd.DatetimeIndex(da.time.values).tz_localize(tz=timezone_str).to_pydatetime()
+
+    da['time'] = times
+    print(f'time zone is {timezone_str:s}')
+
+    return da
+
+
+def read_to_standard_da(file_path: str, var: str, timezone_str: str = 'default'):
     """
     read da and change the dim names/order to time, lon, lat, lev, number
     note: the coords may have several dims, which will be reduced to one, if the coord is not changing
@@ -4128,6 +4620,10 @@ def read_to_standard_da(file_path: str, var: str):
                this function will be crash.
     note: order/name of output da are defined in function get_possible_standard_coords_dims
 
+    attention: standard dim is 'time', 'y', 'x'. if da has no coords that's the default dims names
+        - better to make it diff if the da has coords or not, so da.lon will always be coords not dims.
+        - use the function convert_da_to_std_dim_coords_names
+
     Parameters
     ----------
     file_path :
@@ -4135,6 +4631,9 @@ def read_to_standard_da(file_path: str, var: str):
 
     Returns
     -------
+
+    Args:
+        timezone_str (): not tested yet
 
     """
 
@@ -4145,6 +4644,77 @@ def read_to_standard_da(file_path: str, var: str):
     # change the order of dims: necessary
     # da = convert_da_standard_dims_order(da)
 
+    new_da = convert_da_to_std_dim_coords_names(da)
+
+    if timezone_str != 'default':
+        new_da = add_timezone_da(new_da, timezone_str)
+
+    # ----------------------------- the following code is replace by the function convert_da_to_std_dim_coords_names
+    # coords = get_time_lon_lat_from_da(da)
+    #
+    # possible_coords = get_possible_standard_coords_dims()
+    # # ['time', 'lev', 'lat', 'lon', 'number']
+    #
+    # # prepare new coords with the order and standard names of function: get_possible_standard_coords_dims
+    # new_coords = dict()
+    # max_coords_ndim = 1
+    # for d in possible_coords:
+    #     if d in coords:
+    #         new_coords[d] = coords[d]
+    #         max_coords_ndim = max(max_coords_ndim, coords[d].ndim)
+    #
+    # # to prepare dims names for data and for coords
+    # possible_dims_coords = get_possible_standard_coords_dims(name_for='dims', ndim=max_coords_ndim)  # 1d or 2d
+    # possible_dims_data_1d = get_possible_standard_coords_dims(name_for='dims', ndim=1)
+    #
+    # # get new dim, for data (time, x, y) and for coords lon: [x,y] separately
+    # new_dims_data = dict()
+    # new_dims_coords = dict()
+    # for d in possible_coords:
+    #     if d in coords:
+    #         new_dims_coords[d] = possible_dims_coords[possible_coords.index(d)]
+    #         new_dims_data[d] = possible_dims_data_1d[possible_coords.index(d)]
+    #
+    # # prepare coords parameters for da:
+    # coords_param = dict()
+    # for cod, dim in zip(new_coords.keys(), new_dims_coords.values()):
+    #     coords_param[cod] = (dim, new_coords[cod])
+    #
+    #     # example of coords_param:
+    #     # kkk={"time": (new_coords['time']),
+    #     # "lat": (['y', 'x'], new_coords['lat']),
+    #     # "lon": (['y', 'x'], new_coords['lon'])}
+    #
+    # # create new da:
+    # new_da = xr.DataArray(da.values,
+    #                       dims=list(new_dims_data.values()),
+    #                       coords=coords_param,
+    #                       name=var, attrs=da.attrs)
+
+    # if max_coords_ndim == 2:
+    #     new_da = xr.DataArray(da.values,
+    #                           dims=list(new_dims.values()),
+    #                           coords={
+    #                               "time": (new_coords['time']),
+    #                               "lat": (['y', 'x'], new_coords['lat']),
+    #                               "lon": (['y', 'x'], new_coords['lon']),
+    #                           },
+    #                           name=var, attrs=da.attrs)
+    # --- the above code is replace by the function convert_da_to_std_dim_coords_names
+
+    return new_da
+
+
+def convert_da_to_std_dim_coords_names(da):
+    """
+    note: two dimensional coords not tested yet.
+
+    Args:
+        da ():
+
+    Returns:
+
+    """
     coords = get_time_lon_lat_from_da(da)
 
     possible_coords = get_possible_standard_coords_dims()
@@ -4184,8 +4754,7 @@ def read_to_standard_da(file_path: str, var: str):
     new_da = xr.DataArray(da.values,
                           dims=list(new_dims_data.values()),
                           coords=coords_param,
-                          name=var, attrs=da.attrs)
-
+                          name=da.name, attrs=da.attrs)
     # if max_coords_ndim == 2:
     #     new_da = xr.DataArray(da.values,
     #                           dims=list(new_dims.values()),
@@ -4579,14 +5148,17 @@ def convert_da_shifttime(da: xr.DataArray, second: int):
     time_shifted = da.time.get_index('time') + timedelta(seconds=second)
 
     new_coords = dict(time=time_shifted)
-    possible_coords = ['lev', 'lat', 'lon']  # do not change the order
-    for d in possible_coords:
-        if d in coords:
-            # my_dict['name'] = 'Nick'
-            new_coords[d] = coords[d]
+    # possible_coords = ['lev', 'lat', 'lon']  # do not change the order
+    # for i in range(len(possible_coords)):
+    #     c = possible_coords[i]
+    #     if c in coords:
+    #         # my_dict['name'] = 'Nick'
+    #         new_coords[c] = coords[c]
 
-    new_da = xr.DataArray(da.values, dims=tuple(new_coords.keys()),
-                          coords=new_coords, name=da.name, attrs=da.attrs)
+    # do not change the input dims and coords:
+    new_da = xr.DataArray(da.values, dims=da.dims, name=da.name, attrs=da.attrs)
+    new_da = new_da.assign_coords(time=("time", time_shifted),
+                                  lat=("y", da.lat.data), lon=("x", da.lon.data))
 
     return new_da
 
@@ -4863,6 +5435,163 @@ def get_lon_lat_from_area(area: str):
         lat = -21.1
 
     return lon, lat
+
+
+def value_elevation_from_lonlat(lon, lat):
+    import geocoder
+    g = geocoder.elevation([lat, lon])
+    print(g.meters)
+
+    return g.meters
+
+
+def value_lon_lat_from_address(location: str = 'saint denis, reunion'):
+    from geopy.geocoders import Nominatim
+
+    geolocator = Nominatim(user_agent="re")
+
+    location = geolocator.geocode("st denis, reunion")
+
+    return location.longitude, location.latitude
+
+
+def value_altitude_from_lonlat_reunion(lon: np.ndarray, lat: np.ndarray,
+                                       method: str = 'linear',
+                                       show: bool = True):
+    """
+    interpolate the altitude maps from ASTER GDEM V3,
+    note: works only for Reunion
+
+    Args:
+        method ():
+        lon ():
+        lat ():
+        show ():
+
+    Returns:
+        da map
+
+    """
+    # read ref
+    file1 = f'~/local_data/topo/ASTGTMV003_S21E055_dem.nc'
+    file2 = f'~/local_data/topo/ASTGTMV003_S22E055_dem.nc'
+
+    ref1 = read_to_standard_da(file1, 'ASTER_GDEM_DEM')
+    ref2 = read_to_standard_da(file2, 'ASTER_GDEM_DEM')
+
+    ref = xr.concat([ref1, ref2[1:, :]], dim='y')
+
+    ref = ref.rename({'x': 'lon', 'y': 'lat'})
+
+    interpolated = ref.interp(lon=lon, lat=lat, method=method, kwargs={"fill_value": "extrapolate"})
+
+    new_da = xr.DataArray(data=interpolated.values,
+                          dims=('lat', 'lon'),
+                          coords={'lat': lat, 'lon': lon},
+                          attrs={
+                              'units': 'meters',
+                              'grid_mapping': 'crs',
+                              'standard_name': 'altitude'},
+                          name='altitude')
+    if show:
+        new_da.plot()
+        plt.show()
+
+    # always keep the std dim and coords names:
+    da = convert_da_to_std_dim_coords_names(new_da)
+
+    return da
+
+
+def value_aod_reunion(times: pd.DatetimeIndex, wavelength: float = 700):
+    """
+
+    Args:
+        wavelength ():
+        times ():
+
+    Returns:
+
+    """
+
+    aod_file = f'~/local_data/AERONET/aod.aeronet.reunion.csv'
+
+    aod = read_csv_into_df_with_header(aod_file)
+
+    # not finished yet
+
+    return 1
+
+
+def value_clearsky_radiation(
+        times: pd.DatetimeIndex,
+        lon: np.ndarray,
+        lat: np.ndarray,
+        model: str = 'climatology',
+        show: bool = 1):
+
+    import pvlib
+    from pvlib import clearsky, atmosphere, solarposition
+    from pvlib.location import Location
+
+    # ----------------------------- definition -----------------------------
+    if model == 'climatology':
+        clearsky_model = 'ineichen'  # ineichen with climatology table by default
+    if model == 'local_atmosphere':
+        clearsky_model = 'simplified_solis'
+
+        # prepare AOD
+        # aod_df = value_aod_reunion(times)
+
+        # prepare total column water vapour
+        # wv_da = value_total_column_water_vapour(times, lon=lon, lat=lat)
+
+    # prepare time
+    import timezonefinder
+    tf = timezonefinder.TimezoneFinder()
+    timezone_str = tf.closest_timezone_at(lat=lat.mean(), lng=lon.mean())
+    times_tz = pd.DatetimeIndex(times).tz_localize(tz=timezone_str)
+    # tz is required for clear_sky calculation.
+    # while it's better to output ds/da without tz, since is not natively supported by pandas and/so xarray
+
+    # prepare altitude
+    altitude_da = value_altitude_from_lonlat_reunion(lon=lon, lat=lat)
+
+    nd = np.zeros((len(times), 3, len(lat), len(lon)))
+
+    for i in range(len(lon)):
+        for j in range(len(lat)):
+            print(f'calculate clearsky radiation at each pixel: lon={lon[i]:4.2f}, lat={lat[j]:4.2f}, '
+                  f'altitude={altitude_da.values[j, i]:4.2f}')
+            # pixel = Location(lon[i], lat[j], timezone_str, name=name)
+            pixel = Location(longitude=lon[i], latitude=lat[j], altitude=altitude_da[j, i].values, tz=timezone_str)
+            cs: pd.DataFrame = pixel.get_clearsky(times_tz, model=clearsky_model)
+            nd[:, :, j, i] = cs.values
+
+    ds = xr.Dataset(
+        data_vars=dict(
+            ghi=(["time", "y", "x"], nd[:, 0, :, :]),
+            ndi=(["time", "y", "x"], nd[:, 1, :, :]),
+            dhi=(["time", "y", "x"], nd[:, 2, :, :]),
+        ),
+        coords=dict(
+            time=times,
+            lat=(["y"], lat),
+            lon=(["x"], lon),
+            # keep the good order
+        ),
+        attrs=dict(description="clearsky radiation from pvlib",
+                   units="W/m2"),
+    )
+
+    if show:
+        print(f'plot the last point and last 72 timestep...')
+        cs[0:24].plot()
+        plt.ylabel('Irradiance $W/m^2$')
+        plt.grid()
+        plt.show()
+
+    return ds
 
 
 def value_lonlatbox_from_area(area: str):
@@ -5331,4 +6060,4 @@ def plot_cordex_ensemble_changes_map(past: xr.DataArray, mid: xr.DataArray, end:
     plt.savefig(f'./plot/{big_title.replace(" ", "_"):s}.png', dpi=200)
     plt.show()
     print(f'done')
-# change from update
+# change from Mialhe

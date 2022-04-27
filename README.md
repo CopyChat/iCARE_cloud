@@ -1,5 +1,5 @@
 # iCARE_cloud
-to learn and to use iCare data
+to learn and to use iCare data: NWC SAF GEO cloud products.
 
 ## information:
 ### 1. link of data: 
@@ -13,7 +13,7 @@ utilisable avec les produits S_NWC
 (et non pas seulement avec le L1B comme indiqué pour le moment dans le README).
 
 ### 3. data area:
-- the box: Lon: -2,112; lat: 12,-52.
+- the box: Lon: -2,112; lat: 12,-52. (to be confirm)
 
 
 ## data
@@ -24,17 +24,33 @@ utilisable avec les produits S_NWC
 and and `MSG+0000.1km.hdf` from (http://www.icare.univ-lille1.fr/archive?dir=GEO/STATIC/MSG+0415/)
 , are converted to netcdf by the code `h4tonccf_nc4` downloaded
 from the site [hdfeos](http://hdfeos.org/software/h4cflib.php),
-which is now in my Shell dir.
+which is now in my Shell dir. this code works well for 1km resolution files (MSG+415.1km.hdf)
 
 2. However, the coarse version namely `MSG+0415.3km.hdf` and 
-`MSG+0000.3km.hdf` seem not in good format, can not be read by 
+`MSG+0000.3km.hdf` at 3km resolution seem not in good format, can not be read by 
 `h4tonccf_nc4`. Differences are already seen in HDF viewer.
 
 3. file name: 
 
+
     `MSG+0000` ->  `S_NWC_CMA_MSG1_globeI-VISIR_20170827T120000Z.nc`
 
-    `MSG+0415` ->  `S_NWC_CMA_MSG3_globeM-VISIR_20170827T120000Z.nc`
 
-### 1. MSG+0000
+    `MSG+0415` ->  `S_NWC_CMA_MSG3_globeM-VISIR_20170827T120000Z.nc`
+   
+
+    `icare.lonlat.nc` -> the output of this piece of code, controled by the 
+    `parameter of "add_lon_lat" in the file of "cloud.yaml"`
+
+    icare.lonlat.reg.nc -> if we select a small area from the bigdomain, we will get 
+    a regular projection, this is the output of this piece of code to test a samll selection.
+
+### 1. MSG+0415:
+
+attention: we are using MSG+0415, the projection of field is centered at 41.5 deg East.
+
+the info of coords are restored in an HDF or binary file.
+This piece of code read it and add it to the raw non-coordinated nc files.
+
+
 
