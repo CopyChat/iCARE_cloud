@@ -19,10 +19,6 @@ import GEO_PLOT
 def cloud(cfg: DictConfig) -> None:
     """
     to analysis iCARE cloud product
-    :param cfg:
-    :type cfg:
-    :return:
-    :rtype:
     """
 
     print('starting ...')

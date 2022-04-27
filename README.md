@@ -1,6 +1,8 @@
 # iCARE_cloud
 to learn and to use iCare data: NWC SAF GEO cloud products.
 
+this repo will be connected to CCuR later and working directly with the big volume of data.
+
 ## information:
 ### 1. link of data: 
 - ftp://ftp.icare.univ-lille1.fr/SPACEBORNE/GEO/MSG+0000/S_NWC/ 
