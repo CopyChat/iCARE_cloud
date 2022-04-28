@@ -9,8 +9,13 @@ https://docs.google.com/document/d/1YAUEVlxqM1g7M8y9fNNj1f-l_JvcCOyy/edit?usp=sh
 
 linked to my Google Drive dir on my Mac.
 
-to Change this file locally, I have to access it from my Google Drive path, 
+to Change this file locally, I have to either access it from my Google Drive path, 
 not this working Github path.
+
+ The Google Drive file could be sync with online version.
+
+The Google Dirve file is also be sync by sync folder pro to this working github path, and being version controled.
+Eidt from here is possible, need to waite to finish the sync by this software.
 
 ## information:
 ### 1. link of data: 
