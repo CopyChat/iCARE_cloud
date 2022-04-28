@@ -2,6 +2,15 @@
 to learn and to use iCare data: NWC SAF GEO cloud products.
 
 this repo will be connected to CCuR later and working directly with the big volume of data.
+## documentation:
+
+this work has a doc word file prepared for publications:
+https://docs.google.com/document/d/1YAUEVlxqM1g7M8y9fNNj1f-l_JvcCOyy/edit?usp=sharing&ouid=115400583048984110222&rtpof=true&sd=true
+
+linked to my Google Drive dir on my Mac.
+
+to Change this file locally, I have to access it from my Google Drive path, 
+not this working Github path.
 
 ## information:
 ### 1. link of data: 
