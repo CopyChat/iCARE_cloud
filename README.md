@@ -4,18 +4,15 @@ to learn and to use iCare data: NWC SAF GEO cloud products.
 this repo will be connected to CCuR later and working directly with the big volume of data.
 ## documentation:
 
-this work has a doc word file prepared for publications:
+this work has a doc word file prepared for publications in ./doc/publication:
+- Microsoft word live editing link (login not required):
+https://1drv.ms/w/s!AhhWTWH2RB5fjetdI4NDwqHBFknlIA
+
+- Google Drive real time backup (without live editing):
 https://docs.google.com/document/d/1YAUEVlxqM1g7M8y9fNNj1f-l_JvcCOyy/edit?usp=sharing&ouid=115400583048984110222&rtpof=true&sd=true
+this Google backup is done by "Sync Folder Pro", to my local google Drive.
+to edit locally, using file in this path.
 
-linked to my Google Drive dir on my Mac.
-
-to Change this file locally, I have to either access it from my Google Drive path, 
-not this working Github path.
-
- The Google Drive file could be sync with online version.
-
-The Google Dirve file is also be sync by sync folder pro to this working github path, and being version controled.
-Eidt from here is possible, need to waite to finish the sync by this software.
 
 ## information:
 ### 1. link of data: 
