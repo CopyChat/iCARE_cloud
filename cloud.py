@@ -7,11 +7,15 @@ __version__ = f'Version 2.0  \nTime-stamp: <2021-05-15>'
 __author__ = "ChaoTANG@univ-reunion.fr"
 
 import sys
+import glob
 import hydra
 import numpy as np
 import pandas as pd
 import xarray as xr
 from omegaconf import DictConfig
+import matplotlib.pyplot as plt
+
+import DATA
 import GEO_PLOT
 
 
@@ -23,41 +27,46 @@ def cloud(cfg: DictConfig) -> None:
 
     print('starting ...')
 
-    # this piece of code could be used to add coords information to the downloaded non-coordinated raw netCDF files.
-    # even the test is done for MSG0000 projection, it could be the same for MSG0415.
+    if cfg.job.data.add_coords_to_raw_nc:
+        # this piece of code could be used to add coords information to the downloaded
+        # non-coordinated raw netCDF files.
 
-    if cfg.job.data_prepare.add_lon_lat:
-        # reading HDF lonlat data:
-        lon_1D = GEO_PLOT.read_binary_file(cfg.input.icare_3km_lon_MSG0000)
-        lon = lon_1D.reshape((int(np.sqrt(lon_1D.shape[0])), -1))
+        # all files to be processed:
+        list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/ct.*Z.nc')
 
-        lat_1D = GEO_PLOT.read_binary_file(cfg.input.icare_3km_lat_MSG0000)
-        lat = lat_1D.reshape((int(np.sqrt(lat_1D.shape[0])), -1))
+        for raw_file in list_file:
+            print(raw_file)
+            da = DATA.add_lon_lat_to_raw_nc(raw_nc=raw_file,
+                                            lon=cfg.input.icare_3km_lon_MSG0415,
+                                            lat=cfg.input.icare_3km_lat_MSG0415,
+                                            save=True)
 
-        # read raw data:
-        ct: xr.DataArray = xr.open_dataset(cfg.input.icare_CT_MSG0000)['ct']
+        # return da just for test, not necessary when dealing with a large dataset.
 
-        # now, create a new DataArray, using an attribute timestamp
-        # with lon and lat in two dims (x and y)
-        time = pd.date_range("2000-01-01", periods=1)
-        da = xr.DataArray(np.expand_dims(ct.values, axis=0), dims=('time', 'y', 'x'), name=ct.name,
-                          coords={
-                              'time': ('time', time),
-                              'lon': (['y', 'x'], lon),
-                              'lat': (['y', 'x'], lat)
-                          },
-                          attrs=ct.attrs
-                          )
-
-        # save it to NetCDF file with the lon and lat (2D).
         da.to_netcdf('./icare.lonlat.nc')
-
         # now check if it's still 2D:
-        a = GEO_PLOT.read_to_standard_da('icare.lonlat.nc', 'ct')
+        a = GEO_PLOT.read_to_standard_da('./icare.lonlat.nc', 'ct')
         # this function of read_to_standard_da will check randomly if the dim is static
         # (not changing with other dims). if not, this function will return a 2D coords and
         # print out some randomly selected differences to show, for example,
         # the array of lon is changing with lat.
+
+        # try to select reunion:
+
+        reu_box = GEO_PLOT.value_lonlatbox_from_area('reu')
+        reu_box = [55.2, 55.9, -21.5, -20.8]
+        b = a.where(
+            np.logical_and((a.lon > reu_box[0]), (a.lon < reu_box[1])),
+            drop=True)
+        c = b.where(
+            np.logical_and((b.lat > reu_box[2]), (b.lat < reu_box[-1])),
+            drop=True)
+        d = c.where(
+            np.logical_and((c.lon > reu_box[0]), (c.lon < reu_box[1])),
+            drop=True)
+
+        d.to_netcdf('./reu.nc')
+
 
         # select a domain small enough, so that we get a nc file with regular projection.
         da2 = da[:, 890:900, 690:700]
