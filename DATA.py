@@ -36,12 +36,12 @@ def get_date():
     return dates
 
 
-def add_lon_lat_to_raw_nc(raw_nc: xr.DataArray, lon, lat, save: bool = True):
+def add_lon_lat_to_raw_nc(raw_nc_file: str, lon, lat, var: str, save: bool = True):
     """
     since the data is without any coords, with only dim numbers. this function adds the coords
      to the raw nc file, even if it may not be in a regular projection.
-    :param raw_nc:
-    :type raw_nc:
+    :param raw_nc_file:
+    :type raw_nc_file:
     :param lon:
     :type lon:
     :return:
@@ -57,13 +57,13 @@ def add_lon_lat_to_raw_nc(raw_nc: xr.DataArray, lon, lat, save: bool = True):
     # read raw data into xr.Dataset first, since icare has multiple variables.
     # time is in this Dataset, not in the DataArray with a single variable
 
-    raw_da: xr.Dataset = xr.open_dataset(raw_nc)['ct']
+    raw_da: xr.Dataset = xr.open_dataset(raw_nc_file)[var]
 
     # now, create a new DataArray, using timestamp in the file name.
     # attention: that's the nominal_product_time, when the ~ 12 minutes obs starts
 
     # get time from file name:
-    timestamp = raw_nc.split('_')[-1].split('Z')[0]
+    timestamp = raw_nc_file.split('_')[-1].split('Z')[0]
     # with code above, remove the UTC timezone info, and add it to the attributes of output nc file,
     # otherwise, the time in output nc will be in object format, not the DateTimeIndex.
     time = pd.date_range(timestamp, periods=1)  # only 1 timestep per file
@@ -72,7 +72,7 @@ def add_lon_lat_to_raw_nc(raw_nc: xr.DataArray, lon, lat, save: bool = True):
     # name it as global, even it's not global
     global_raw_nc = f'/Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/' \
                   f'S_NWC_CT_MSG1_globeI-VISIR_20170827T120000Z.nc'
-    global_raw_da = xr.open_dataset(global_raw_nc)['ct']
+    global_raw_da = xr.open_dataset(global_raw_nc)[var]
 
     global_nx = global_raw_da.nx
     global_ny = global_raw_da.ny
@@ -116,8 +116,77 @@ def add_lon_lat_to_raw_nc(raw_nc: xr.DataArray, lon, lat, save: bool = True):
 
     if save:
         # save it to NetCDF file with the lon and lat (2D).
-        output_name = f'{Path(raw_nc).stem:s}.lonlat.nc'
-        input_dir = os.path.split(raw_nc)[0]
+        output_name = f'{Path(raw_nc_file).stem:s}.lonlat.nc'
+        input_dir = os.path.split(raw_nc_file)[0]
+
+        # output to the same dir:
+        da.to_netcdf(f'{input_dir:s}/{output_name:s}')
+        print(f'saved to {input_dir:s}/{output_name:s}')
+
+    # test_da = GEO_PLOT.read_to_standard_da(f'{input_dir:s}/{output_name:s}', var)
+
+    return da
+
+
+def select_area_by_lon_lat(raw_nc_file: str, var: str, box: list, save: bool = True, area: str = 'reu'):
+    """
+    select area by lonlat box
+    :param var:
+    :param raw_nc_file: need to read da, and get the save path
+    :param box: list of [lon1, lon2, lat2, lat2]
+    :param save:
+    :param area:
+    :return: 1 or xr.DataArray
+    :rtype:
+    """
+
+    da = GEO_PLOT.read_to_standard_da(raw_nc_file, var)
+
+    b = da.where(
+        np.logical_and((da.lon > box[0]), (da.lon < box[1])),
+        drop=True)
+    c = b.where(
+        np.logical_and((b.lat > box[2]), (b.lat < box[-1])),
+        drop=True)
+    d = c.where(
+        np.logical_and((c.lon > box[0]), (c.lon < box[1])),
+        drop=True)
+
+    if save:
+        # save it to NetCDF file with the lon and lat (2D).
+        output_name = f'{Path(raw_nc_file).stem:s}.{area:s}.nc'
+        input_dir = os.path.split(raw_nc_file)[0]
+
+        # output to the same dir:
+        d.to_netcdf(f'{input_dir:s}/{output_name:s}')
+        print(f'saved to {input_dir:s}/{output_name:s}')
+
+    return da
+
+
+def merge_nc_by_time(list_file: list, var: str, save: bool = True):
+    """
+    # since CDO mergetime function will lose the lon/lat by unknown reason,
+    # I make a function in Python.
+    :param list_file:
+    :param var:
+    :param save:
+    :return:
+    """
+
+    # read the first da
+    da = GEO_PLOT.read_to_standard_da(list_file[0], var)
+
+    for i in range(len(list_file)):
+        if i > 0:
+            da1 = GEO_PLOT.read_to_standard_da(list_file[i], var)
+
+            da = xr.concat([da, da1], dim='time')
+
+    if save:
+        # save it to NetCDF file with the lon and lat (2D).
+        output_name = f'{Path(list_file[0]).stem:s}.mergetime.nc'
+        input_dir = os.path.split(list_file[0])[0]
 
         # output to the same dir:
         da.to_netcdf(f'{input_dir:s}/{output_name:s}')
