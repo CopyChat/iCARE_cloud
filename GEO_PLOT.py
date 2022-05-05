@@ -3449,9 +3449,17 @@ def reduce_ndim_coord(coord: xr.DataArray, dim_name: str, random: bool = True,
 
     check_coord = check_coord.stack(new_dim=other_dim)
 
+    # random check of 10 percent is not enough if the length is smaller than say 500
+    # example: icare data, SAF_NWF reunion selection in project iCare_Cloud, lat=24 lon=28,
+    # we have to check all of these 24 or 28, since only few of them are different (dim dependent).
+    if check_coord.shape[0] < 500:
+        random = False
+
     if random:
+
         from random import randint
         check_len = int(min(check_coord.shape[0] * check_ratio, max_check_len))
+
         check_index = [randint(0, check_len - 1) for x in range(check_len)]
 
         # select some sample to boost
@@ -3466,8 +3474,8 @@ def reduce_ndim_coord(coord: xr.DataArray, dim_name: str, random: bool = True,
             pass
         else:
             diff += 1
-            print('not same: ', i)
-            print(f'random number is ', check_index)
+            # print('not same: ', i)
+            # print(f'random number is ', check_index)
 
     if diff:
         return original_coord
