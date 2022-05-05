@@ -36,7 +36,7 @@ def cloud(cfg: DictConfig) -> None:
 
         for raw_file in list_file:
             print(raw_file)
-            da = DATA.add_lon_lat_to_raw_nc(raw_nc=raw_file,
+            da = DATA.add_lon_lat_to_raw_nc(raw_nc_file=raw_file, var='ct',
                                             lon=cfg.input.icare_3km_lon_MSG0415,
                                             lat=cfg.input.icare_3km_lat_MSG0415,
                                             save=True)
@@ -51,33 +51,27 @@ def cloud(cfg: DictConfig) -> None:
         # print out some randomly selected differences to show, for example,
         # the array of lon is changing with lat.
 
+    if cfg.job.data.select_reunion:
+
         # try to select reunion:
 
         reu_box = GEO_PLOT.value_lonlatbox_from_area('reu')
-        reu_box = [55.2, 55.9, -21.5, -20.8]
-        b = a.where(
-            np.logical_and((a.lon > reu_box[0]), (a.lon < reu_box[1])),
-            drop=True)
-        c = b.where(
-            np.logical_and((b.lat > reu_box[2]), (b.lat < reu_box[-1])),
-            drop=True)
-        d = c.where(
-            np.logical_and((c.lon > reu_box[0]), (c.lon < reu_box[1])),
-            drop=True)
+        # or a smaller domain:
+        reu_box = [55.12, 55.9, -21.5, -20.8]
 
-        d.to_netcdf('./reu.nc')
+        list_lonlat_file: list = glob.glob(f'{cfg.dir.icare_data:s}/ct.*Z.lonlat.nc')
 
+        for raw_file in list_lonlat_file:
+            print(raw_file)
+            da = DATA.select_area_by_lon_lat(raw_nc_file=raw_file, var='ct',
+                                             box=reu_box, area='reu', save=True)
 
-        # select a domain small enough, so that we get a nc file with regular projection.
-        da2 = da[:, 890:900, 690:700]
-        da2.to_netcdf('./icare.lonlat.reg.nc')
+    if cfg.job.data.mergetime:
+        # since CDO mergetime function will lose the lon/lat by unknown reason,
+        # I make a function in Python.
+        list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/ct.*Z.lonlat.reu.nc')
 
-        # now, let's read da2 to see if we get a 1D coords:
-        b = GEO_PLOT.read_to_standard_da('icare.lonlat.reg.nc', 'ct')
-
-        # print out the coords, we will see that in a square of 10*10 pixel, we get a reguler projection.
-        # while it depends on the distance to the centre point of the observation domain, which is 41.5 East.
-        print(b.coords)
+        da = DATA.merge_nc_by_time(list_file, 'ct')
 
         print(f'good')
 
