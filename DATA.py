@@ -9,10 +9,10 @@ import os
 import sys
 import hydra
 import scipy
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import xarray as xr
-from pathlib import Path
 from omegaconf import DictConfig
 import GEO_PLOT
 
@@ -130,7 +130,7 @@ def add_lon_lat_to_raw_nc(raw_nc_file: str, lon, lat, var: str, save: bool = Tru
     return da
 
 
-def select_area_by_lon_lat(raw_nc_file: str, var: str, box: list, save: bool = True, area: str = 'reu'):
+def select_area_by_lon_lat_2D_dim(raw_nc_file: str, var: str, box: list, save: bool = True, area: str = 'reu'):
     """
     select area by lonlat box
     :param var:
@@ -166,48 +166,12 @@ def select_area_by_lon_lat(raw_nc_file: str, var: str, box: list, save: bool = T
     return da
 
 
-def merge_nc_by_time(list_file: list, var: str, save: bool = True):
-    """
-    # since CDO mergetime function will lose the lon/lat by unknown reason,
-    # I make a function in Python.
-    :param list_file:
-    :param var:
-    :param save:
-    :return:
-    """
-
-    # read the first da
-    da = GEO_PLOT.read_to_standard_da(list_file[0], var)
-
-    for i in range(len(list_file)):
-        if i > 0:
-            da1 = GEO_PLOT.read_to_standard_da(list_file[i], var)
-
-            da = xr.concat([da, da1], dim='time')
-
-    da = da.sortby(da.time)
-
-    if save:
-        # save it to NetCDF file with the lon and lat (2D).
-        output_name = f'{Path(list_file[0]).stem:s}.mergetime.nc'
-        input_dir = os.path.split(list_file[0])[0]
-
-        # output to the same dir:
-        da.to_netcdf(f'{input_dir:s}/{output_name:s}')
-        print(f'saved to {input_dir:s}/{output_name:s}')
-
-    return da
-
-
 @hydra.main(config_path="configs", config_name="scale_interaction")
 def data_process(cfg: DictConfig) -> None:
     """
     put data process here and
     put data loading functions above for further use
     """
-
-    if cfg.job.data.add_coords_to_raw_nc:
-        print('good')
 
     print(f'done')
 

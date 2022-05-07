@@ -32,12 +32,11 @@ shift $(($OPTIND - 1))
 # ======================================
 ## DEFINITION
 
-# if on CCuR:
-local_icare_dir=/gpfs/scratch/le2p/OBS_DATA/icare/ctang/2019
-
 # if on my Mac:
 local_icare_dir=~/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/icare_dir_ccur
 
+# if on CCuR:
+local_icare_dir=/gpfs/scratch/le2p/OBS_DATA/icare/ctang/2019/ct
 # ======================================
 
 
@@ -71,7 +70,7 @@ function selvar()
     do
         echo $f
 
-        for var in ct ct_conditions
+        for var in ct
         do
             echo $var
             cdo selvar,$var $f $var.$f
