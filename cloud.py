@@ -28,6 +28,8 @@ def cloud(cfg: DictConfig) -> None:
     - this project is connected to CCuR now
 
     attention: this code could be run by (python cloud.py) on CCuR in the right Python env
+        is better to use disown -h % to make it run in background, the way of "()" doesn't work.
+
     """
 
     print('starting ...')
