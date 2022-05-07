@@ -40,10 +40,12 @@ def add_lon_lat_to_raw_nc(raw_nc_file: str, lon, lat, var: str, save: bool = Tru
     """
     since the data is without any coords, with only dim numbers. this function adds the coords
      to the raw nc file, even if it may not be in a regular projection.
+    :param save:
+    :param var:
+    :param lat:
     :param raw_nc_file:
     :type raw_nc_file:
     :param lon:
-    :type lon:
     :return:
     :rtype: xr.DataArray
     """
@@ -70,8 +72,8 @@ def add_lon_lat_to_raw_nc(raw_nc_file: str, lon, lat, var: str, save: bool = Tru
 
     # then find the lon et lat corresponding to our selection of domain when downloading data: 632*855.
     # name it as global, even it's not global
-    global_raw_nc = f'/Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/' \
-                  f'S_NWC_CT_MSG1_globeI-VISIR_20170827T120000Z.nc'
+    global_raw_nc = f'./local_data/global_data_example/' \
+                    f'S_NWC_CT_MSG1_globeI-VISIR_20170827T120000Z.nc'
     global_raw_da = xr.open_dataset(global_raw_nc)[var]
 
     global_nx = global_raw_da.nx
@@ -182,6 +184,8 @@ def merge_nc_by_time(list_file: list, var: str, save: bool = True):
             da1 = GEO_PLOT.read_to_standard_da(list_file[i], var)
 
             da = xr.concat([da, da1], dim='time')
+
+    da = da.sortby(da.time)
 
     if save:
         # save it to NetCDF file with the lon and lat (2D).

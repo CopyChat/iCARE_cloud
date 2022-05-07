@@ -12,11 +12,13 @@ dir:
   data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/dataset
   local_data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data
   plot: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/plot
-  icare_data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/icare_dir_ccur
+#  icare_data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/icare_dir_ccur
+  icare_data: /gpfs/scratch/le2p/OBS_DATA/icare/ctang/2019/ct
 
 job:
   data:
-    add_coords_to_raw_nc: 0
+    prepare_data_ccur: 0
+    add_coords_to_raw_nc: 1
     select_reunion: 1
     mergetime: 1
 
@@ -32,8 +34,8 @@ input:
   icare_CT_MSG0000: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/S_NWC_CT_MSG3_globeM-VISIR_20170827T120000Z.nc
   icare_3km_lon_MSG0000: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/MSG+0000.3km.lon
   icare_3km_lat_MSG0000: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/MSG+0000.3km.lat
-  icare_3km_lat_MSG0415: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/MSG+0415.3km.lat
-  icare_3km_lon_MSG0415: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/MSG+0415.3km.lon
+  icare_3km_lat_MSG0415: ./local_data/coords/MSG+0415.3km.lat
+  icare_3km_lon_MSG0415: ./local_data/coords/MSG+0415.3km.lon
 
 #plot:
 #

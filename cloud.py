@@ -17,22 +17,34 @@ import matplotlib.pyplot as plt
 
 import DATA
 import GEO_PLOT
+import subprocess
 
 
 @hydra.main(config_path="configs", config_name="cloud")
 def cloud(cfg: DictConfig) -> None:
     """
     to analysis iCARE cloud product
+
+    attention: this code could be run by (python cloud.py) on CCuR in the right Python env
     """
 
     print('starting ...')
+    if cfg.job.data.prepare_data_ccur:
+        # get data ready for processing
+        # to select a single variable
+        subprocess.call(["./src/Data.sh"], shell=False)
+        # attention: if module do not works, just run the code directly on CCuR.
 
     if cfg.job.data.add_coords_to_raw_nc:
         # this piece of code could be used to add coords information to the downloaded
         # non-coordinated raw netCDF files.
 
         # all files to be processed:
+        # change the dir in config/cloud.yami if needed
         list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/ct.*Z.nc')
+
+        # resort by DateTime in the name file
+        list_file.sort()
 
         for raw_file in list_file:
             print(raw_file)
@@ -43,14 +55,6 @@ def cloud(cfg: DictConfig) -> None:
 
         # return da just for test, not necessary when dealing with a large dataset.
 
-        da.to_netcdf('./icare.lonlat.nc')
-        # now check if it's still 2D:
-        a = GEO_PLOT.read_to_standard_da('./icare.lonlat.nc', 'ct')
-        # this function of read_to_standard_da will check randomly if the dim is static
-        # (not changing with other dims). if not, this function will return a 2D coords and
-        # print out some randomly selected differences to show, for example,
-        # the array of lon is changing with lat.
-
     if cfg.job.data.select_reunion:
 
         # try to select reunion:
@@ -60,6 +64,9 @@ def cloud(cfg: DictConfig) -> None:
         reu_box = [55.12, 55.9, -21.5, -20.8]
 
         list_lonlat_file: list = glob.glob(f'{cfg.dir.icare_data:s}/ct.*Z.lonlat.nc')
+
+        # resort by DateTime in the name file
+        list_lonlat_file.sort()
 
         for raw_file in list_lonlat_file:
             print(raw_file)
