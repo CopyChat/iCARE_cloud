@@ -10,6 +10,7 @@ import os
 import scipy
 import sys
 import yaml
+from pathlib import Path
 from typing import List
 import warnings
 import hydra
@@ -4239,6 +4240,39 @@ def get_gcm_list_in_dir(var: str, path: str):
     gcm.sort()
 
     return gcm
+
+
+def nc_mergetime(list_file: list, var: str, save: bool = True):
+    """
+    # since CDO mergetime function will lose the lon/lat by unknown reason,
+    # I make a function in Python.
+    :param list_file:
+    :param var:
+    :param save:
+    :return:
+    """
+
+    # read the first da
+    da = read_to_standard_da(list_file[0], var)
+
+    for i in range(len(list_file)):
+        if i > 0:
+            da1 = read_to_standard_da(list_file[i], var)
+
+            da = xr.concat([da, da1], dim='time')
+
+    da = da.sortby(da.time)
+
+    if save:
+        # save it to NetCDF file with the lon and lat (2D).
+        output_name = f'{Path(list_file[0]).stem:s}.mergetime.nc'
+        input_dir = os.path.split(list_file[0])[0]
+
+        # output to the same dir:
+        da.to_netcdf(f'{input_dir:s}/{output_name:s}')
+        print(f'saved to {input_dir:s}/{output_name:s}')
+
+    return da
 
 
 def convert_cmip6_ensemble_2_standard_da(
