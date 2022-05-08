@@ -89,11 +89,20 @@ def cloud(cfg: DictConfig) -> None:
         # I make a function in Python.
 
         # TODO: to mergetime by month
-        list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/ct.*Z.lonlat.reu.nc')
+        # example file: ct.S_NWC_CT_MSG1_globeI-VISIR_20190610T030000Z.lonlat.nc
+        for j in range(1, 13):
+            month = str(j).zfill(2)
+            print(f'merge in month {month:s}')
 
-        da = GEO_PLOT.nc_mergetime(list_file, 'ct')
+            # for swio:
+            list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/'
+                                        f'ct.*_2019{month:s}??T*Z.lonlat.nc')
+            da = GEO_PLOT.nc_mergetime(list_file, 'ct')
 
-        print(f'good')
+            # for Reunion:
+            list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/'
+                                        f'ct.*_2019{month:s}??T*Z.lonlat.reu.nc')
+            da2 = GEO_PLOT.nc_mergetime(list_file, 'ct')
 
     print('done')
 
