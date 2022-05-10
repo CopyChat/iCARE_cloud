@@ -52,7 +52,7 @@ def cloud(cfg: DictConfig) -> None:
 
         # all files to be processed:
         # change the dir in config/cloud.yami if needed
-        list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/ct.*Z.nc')
+        list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/raw/ct.*Z.nc')
 
         # resort by DateTime in the name file
         list_file.sort()
@@ -88,21 +88,25 @@ def cloud(cfg: DictConfig) -> None:
         # since CDO mergetime function will lose the lon/lat by unknown reason,
         # I make a function in Python.
 
-        # TODO: to mergetime by month
         # example file: ct.S_NWC_CT_MSG1_globeI-VISIR_20190610T030000Z.lonlat.nc
         for j in range(1, 13):
             month = str(j).zfill(2)
             print(f'merge in month {month:s}')
 
-            # for swio:
-            list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/'
-                                        f'ct.*_2019{month:s}??T*Z.lonlat.nc')
-            da = GEO_PLOT.nc_mergetime(list_file, 'ct')
+            # for swio (daily):
+            # for d in range(1, 32):
+            #     day = str(d).zfill(2)
+            #     print(f'merge in month {month:s}, day {day:s}...')
+            #     list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/swio/'
+            #                                 f'ct.*_2019{month:s}{day:s}T*Z.lonlat.nc')
+            #     list_file.sort()
+            #     da = GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='daily')
 
-            # for Reunion:
-            list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/'
+            # for Reunion (monthly):
+            list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/reu/'
                                         f'ct.*_2019{month:s}??T*Z.lonlat.reu.nc')
-            da2 = GEO_PLOT.nc_mergetime(list_file, 'ct')
+            list_file.sort()
+            da2 = GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='monthly')
 
     print('done')
 

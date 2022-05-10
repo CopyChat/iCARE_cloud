@@ -4242,15 +4242,16 @@ def get_gcm_list_in_dir(var: str, path: str):
     return gcm
 
 
-def nc_mergetime(list_file: list, var: str, output_tag: str = '', save: bool = True):
+def nc_mergetime(list_file: list, var: str, output_tag: str = 'mergetime', save: bool = True):
     """
     # since CDO mergetime function will lose the lon/lat by unknown reason,
     # I make a function in Python.
-    :param output_tag: use it to avoid over writing with this function is called in loop, usually use the month
+    :param output_tag: monthly, daily, e.g.
+           use it to avoid over writing with this function is called in loop, usually use the month
     :param list_file:
     :param var:
     :param save:
-    :return:
+    :return: a nc file merged, named as the 1st file in the list, with "mergetime.nc" in the end.
     """
 
     # read the first da
@@ -4269,7 +4270,7 @@ def nc_mergetime(list_file: list, var: str, output_tag: str = '', save: bool = T
 
     if save:
         # save it to NetCDF file with the lon and lat (2D).
-        output_name = f'{Path(list_file[0]).stem:s}.mergetime.{output_tag:s}.nc'
+        output_name = f'{Path(list_file[0]).stem:s}.{output_tag:s}.nc'
         # output files may have the timestamp in the file name, that's the starting time of
         # the merged file
         input_dir = os.path.split(list_file[0])[0]

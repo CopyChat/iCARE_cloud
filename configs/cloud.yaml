@@ -18,9 +18,9 @@ dir:
 job:
   data:
     prepare_data_ccur: 0
-    add_coords_to_raw_nc: 1
-    select_reunion: 1
-    mergetime: 0
+    add_coords_to_raw_nc: 0
+    select_reunion: 0
+    mergetime: 1
 
 
 
