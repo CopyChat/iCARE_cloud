@@ -13,6 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import xarray as xr
+import matplotlib.pyplot as plt
 from omegaconf import DictConfig
 import GEO_PLOT
 
@@ -94,7 +95,7 @@ def add_lon_lat_to_raw_nc(raw_nc_file: str, lon, lat, var: str, save: bool = Tru
     # offset_x = abs(global_nx.values[0] - local_nx.values[0])/total_len
     # ================================== some test above
 
-    # Note: the downloaded data has its own nx & nx, do a linear interpolation to get the coords:
+    # Note: the downloaded data has its own nx & ny, do a linear interpolation to get the coords:
     # define the interpolation on 2D:
     func_lon = scipy.interpolate.interp2d(global_nx, global_ny, lon, kind='linear')
     func_lat = scipy.interpolate.interp2d(global_nx, global_ny, lat, kind='linear')
@@ -102,6 +103,28 @@ def add_lon_lat_to_raw_nc(raw_nc_file: str, lon, lat, var: str, save: bool = Tru
 
     local_lon = func_lon(local_nx, local_ny)
     local_lat = func_lat(local_nx, local_ny)
+
+    # do some test to understand the projection:
+    test = 0
+    if test:
+
+        lon[lon == -999] = np.nan
+        lat[lat == -999] = np.nan
+
+        for i in range(lon.shape[0]):
+            print(i)
+            lat1 = lat[:, i]
+            lon1 = lon[i, :]
+
+            plt.plot(lon1, lat1)
+
+        plt.ylim([np.nanmin(lat), np.nanmax(lat)])
+        plt.xlim([np.nanmin(lon), np.nanmax(lon)])
+
+        plt.xlabel('lon')
+        plt.ylabel('lat')
+
+        plt.show()
 
     # then create a new DataArray:
     da = xr.DataArray(np.expand_dims(raw_da.values, axis=0), dims=('time', 'y', 'x'), name=raw_da.name,
