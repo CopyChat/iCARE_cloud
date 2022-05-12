@@ -2169,7 +2169,6 @@ def find_symmetric_difference(list1, list2):
 
 
 def plot_join_heatmap_boxplot(da: xr.DataArray):
-
     # ----------------------------- prepare data -----------------------------
     # for heatmap:
     da_matrix = da.groupby(da.time.dt.strftime("%m-%H")).mean(keep_attrs=True)
@@ -2331,6 +2330,43 @@ def plot_matrix_class_vs_class(class_x: pd.DataFrame,
     plt.savefig(output_plot, dpi=300)
 
     plt.show()
+
+    print(f'job done')
+
+
+def plot_2D_matrix(metrix_2d: np.ndarray, xlabel: str = 'x', ylabel: str = 'y'):
+
+    # get info from input:
+    n_class = int(metrix_2d.max())
+
+    year_start = metrix_2d.index.year.min()
+    year_end = metrix_2d.index.year.max()
+    n_year = year_end - year_start + 1
+
+    month_list = list(set(metrix_2d.index.month))
+
+    for i in range(n_class):
+        class_1 = metrix_2d.loc[metrix_2d.values == i + 1]
+        cross = np.zeros((n_year, len(month_list)))
+
+        for y in range(n_year):
+            for im in range(len(month_list)):
+                cross[y, im] = class_1.loc[
+                    (class_1.index.year == y + year_start) &
+                    (class_1.index.month == month_list[im])].__len__()
+
+        print(f'# ----------------- {n_class:g} -> {i + 1:g} -----------------------------')
+
+        df = pd.DataFrame(data=cross, index=range(year_start, year_start + n_year), columns=month_list)
+        df = df.astype(int)
+
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 6), facecolor='w', edgecolor='k', dpi=300)
+
+        plot_color_matrix(df=df, ax=ax, cbar_label='count')
+
+        plt.suptitle(f'C{n_class:g} -> C{i + 1:g}')
+        plt.savefig(f'./plot/{output_plot:s}', dpi=220)
+        plt.show()
 
     print(f'job done')
 
@@ -3457,7 +3493,6 @@ def reduce_ndim_coord(coord: xr.DataArray, dim_name: str, random: bool = True,
         random = False
 
     if random:
-
         from random import randint
         check_len = int(min(check_coord.shape[0] * check_ratio, max_check_len))
 
@@ -4259,7 +4294,6 @@ def nc_mergetime(list_file: list, var: str, output_tag: str = 'mergetime', save:
 
     for i in range(len(list_file)):
         if i > 0:
-
             print(f'merging {i:g} of {len(list_file):g} ...')
 
             da1 = read_to_standard_da(list_file[i], var)
@@ -6198,6 +6232,54 @@ def plot_cordex_ensemble_changes_map(past: xr.DataArray, mid: xr.DataArray, end:
     plt.savefig(f'./plot/{big_title.replace(" ", "_"):s}.png', dpi=200)
     plt.show()
     print(f'done')
+
+
+def check_missing_da(start: str, end: str, freq: str, da: xr.DataArray, plot: bool = True):
+    """
+    to find the missing data number in months and in hours
+    :param start:
+    :param end:
+    :param freq:
+    :param da:
+    :param plot:
+    :return:
+    """
+    total_time_steps = pd.date_range(start, end, freq=freq)
+
+    missing_num = len(total_time_steps) - da.sizes['time']
+    print(f'there are {missing_num:g} missing values..')
+
+    if missing_num:
+        # find the missing values:
+        A = total_time_steps.strftime('%Y-%m-%d %H:%M')
+        B = da.time.dt.strftime('%Y-%m-%d %H:%M')
+        C = [i for i in A if i not in B]
+
+        matrix_mon_hour = np.zeros((12, 24))
+        missing_datetime = pd.to_datetime(C)
+        for i in range(1, 13):
+            monthly = missing_datetime[missing_datetime.month == i]
+            for h in range(0, 24):
+                missing_hours = list(monthly.groupby(monthly.hour).keys())
+
+                if h in missing_hours:
+                    matrix_mon_hour[i - 1, h] = monthly.groupby(monthly.hour)[h].size
+
+    if plot:
+
+        im = plt.imshow(matrix_mon_hour, cmap="OrRd")
+        plt.colorbar(im, orientation='horizontal', shrink=0.8, pad=0.2,
+                     label='num of missing values')
+
+        plt.xlabel('hour')
+        plt.ylabel('month')
+
+        plt.title(f'num of missing data in month and hour @ {freq:s}')
+
+        plt.show()
+
+    return matrix_mon_hour
+
 
 
 # change from Mialhe
