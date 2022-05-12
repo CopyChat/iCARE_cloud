@@ -116,6 +116,23 @@ def cloud(cfg: DictConfig) -> None:
         list_file.sort()
         da2 = GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='year.ly')
 
+    if cfg.job.data.missing_reu:
+        # check missing for each year
+        freq = '15min'
+        start = '2019-01-01 00:00'
+        end = '2019-12-31 23:45'
+        reu_da = GEO_PLOT.read_to_standard_da(cfg.input.reu_nc, 'ct')
+
+        mon_hour_matrix = GEO_PLOT.check_missing_da(
+            start=start, end=end, freq=freq,
+            da=reu_da, plot=True)
+
+
+
+
+
+
+
     print('done')
 
 
