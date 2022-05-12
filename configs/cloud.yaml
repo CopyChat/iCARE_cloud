@@ -6,15 +6,6 @@ hydra:
 #    dir: ./outputs/${now:%Y-%m-%d_%H-%M-%S}
     dir: .
 
-# Directories
-dir:
-  working: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/
-  data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/dataset
-  local_data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data
-  plot: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/plot
-#  icare_data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/icare_dir_ccur
-  icare_data: /gpfs/scratch/le2p/OBS_DATA/icare/ctang/2019/ct
-
 job:
   data:
     prepare_data_ccur: 0
@@ -23,6 +14,16 @@ job:
     mergetime_swio: 0
     mergetime_reu: 0
     missing_reu: 1
+
+
+dir:
+  working: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/
+  data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/dataset
+  local_data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data
+  plot: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/plot
+#  icare_data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/icare_dir_ccur
+  icare_data: /gpfs/scratch/le2p/OBS_DATA/icare/ctang/2019/ct
+
 
 
 
