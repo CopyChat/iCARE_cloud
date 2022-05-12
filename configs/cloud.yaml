@@ -20,7 +20,9 @@ job:
     prepare_data_ccur: 0
     add_coords_to_raw_nc: 0
     select_reunion: 0
-    mergetime: 1
+    mergetime_swio: 0
+    mergetime_reu: 0
+
 
 
 

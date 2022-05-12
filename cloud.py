@@ -84,7 +84,7 @@ def cloud(cfg: DictConfig) -> None:
         # after selection the Reunion domain still in general projection.
         # see plots of latitude and longitude in ./plot
 
-    if cfg.job.data.mergetime:
+    if cfg.job.data.mergetime_swio:
         # since CDO mergetime function will lose the lon/lat by unknown reason,
         # I make a function in Python.
 
@@ -94,19 +94,27 @@ def cloud(cfg: DictConfig) -> None:
             print(f'merge in month {month:s}')
 
             # for swio (daily):
-            # for d in range(1, 32):
-            #     day = str(d).zfill(2)
-            #     print(f'merge in month {month:s}, day {day:s}...')
-            #     list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/swio/'
-            #                                 f'ct.*_2019{month:s}{day:s}T*Z.lonlat.nc')
-            #     list_file.sort()
-            #     da = GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='daily')
+            for d in range(1, 32):
+                day = str(d).zfill(2)
+                print(f'merge in month {month:s}, day {day:s}...')
+                list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/swio/'
+                                            f'ct.*_2019{month:s}{day:s}T*Z.lonlat.nc')
+                list_file.sort()
+                da = GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='daily')
 
-            # for Reunion (monthly):
+            # for swio (monthly):
             list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/reu/'
-                                        f'ct.*_2019{month:s}??T*Z.lonlat.reu.nc')
+                                        f'ct.*_2019{month:s}??T*Z.lonlat.swio.nc')
             list_file.sort()
             da2 = GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='monthly')
+
+    if cfg.job.data.mergetime_reu:
+
+        # for reu (yearly)
+        list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/reu/'
+                                    f'ct.*_2019????T*Z.lonlat.reu.nc')
+        list_file.sort()
+        da2 = GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='year.ly')
 
     print('done')
 
