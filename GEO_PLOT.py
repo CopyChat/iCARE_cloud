@@ -9,12 +9,11 @@ __author__ = "ChaoTANG@univ-reunion.fr"
 import os
 import scipy
 import sys
-import yaml
 from pathlib import Path
 from typing import List
 import warnings
 import hydra
-import seaborn
+import seaborn as sns
 from omegaconf import DictConfig
 import cftime
 import glob
@@ -31,7 +30,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from statsmodels.stats.multitest import fdrcorrection as fdr_cor
 
 
-def my_coding_rules():
+def rules_data_format():
     """
 
     :return:
@@ -658,7 +657,6 @@ def plot_class_occurrence_and_anomaly_time_series(classif: pd.DataFrame, anomaly
 
     print(f'bar plot')
     fig.add_subplot(grid[-1, 0])
-    import seaborn as sns
     sns.set(style="whitegrid")
     sns.barplot(x='year', y="occurrence", hue=f'class', data=classif)
 
@@ -706,11 +704,11 @@ def check_nan_inf_da_df(df):
               f'which is only {num_inf * 100 / df.shape[0]: 4.2f} %. Not Much')
 
 
-def plot_violinplot_df_1D(df: pd.DataFrame, x: str, y: str, y_unit: str,
-                          x_label: str = 0, y_label: str = 0,
-                          hue: str = 0,
-                          suptitle_add_word: str = '',
-                          ):
+def plot_violin_df_1D(df: pd.DataFrame, x: str, y: str, y_unit: str = '',
+                      x_label: str = 0, y_label: str = 0,
+                      hue: str = 0,
+                      suptitle_add_word: str = '',
+                      ):
     """
     plot violin plot
     Args:
@@ -737,7 +735,17 @@ def plot_violinplot_df_1D(df: pd.DataFrame, x: str, y: str, y_unit: str,
 
     from seaborn import violinplot
 
-    fig, ax = plt.subplots(figsize=(11, 6), dpi=220)
+    # calculate fig size:
+
+    n_x = len(set(df[x].values))
+    if hue:
+        n_hue = len(set(df[hue].values))
+    else:
+        n_hue = 1
+
+    fig_width = n_x * n_hue
+
+    fig, ax = plt.subplots(figsize=(fig_width, 6), dpi=220)
     if hue:
         ax = violinplot(x=x, y=y, hue=hue, data=df)
     else:
@@ -755,7 +763,6 @@ def plot_violinplot_df_1D(df: pd.DataFrame, x: str, y: str, y_unit: str,
 
     plt.savefig(f'./plot/{title.replace(" ", "_"):s}.'
                 f'.png', dpi=300)
-
     plt.show()
 
 
@@ -929,12 +936,14 @@ def remove_duplicate_list(mylist: list) -> list:
 def plot_geo_subplot_map(geomap, vmin, vmax, bias, ax,
                          domain: str, tag: str,
                          plot_cbar: bool = True,
-                         type: str = 'contourf',
+                         cmap=plt.cm.coolwarm,
+                         plt_type: str = 'contourf',
                          statistics: bool = 1):
     """
     plot subplot
     Args:
-        type ():
+        cmap:
+        plt_type ():
         geomap ():
         vmin ():
         vmax ():
@@ -957,15 +966,15 @@ def plot_geo_subplot_map(geomap, vmin, vmax, bias, ax,
 
     # vmax = geomap.max()
     # vmin = geomap.min()
-    cmap, norm = set_cbar(vmax=vmax, vmin=vmin, n_cbar=20, bias=bias)
+    cmap, norm = set_cbar(vmax=vmax, vmin=vmin, n_cbar=10, cmap=cmap, bias=bias)
 
     cf = 'wrong type'
 
-    if type == 'pcolormesh':
+    if plt_type == 'pcolormesh':
         cf = plt.pcolormesh(geomap.lon, geomap.lat, geomap,
                             cmap=cmap, norm=norm, transform=ccrs.PlateCarree())
 
-    if type == 'contourf':
+    if plt_type == 'contourf':
         cf: object = ax.contourf(geomap.lon, geomap.lat, geomap, levels=norm.boundaries,
                                  cmap=cmap, norm=norm, transform=ccrs.PlateCarree(), extend='both')
 
@@ -973,11 +982,11 @@ def plot_geo_subplot_map(geomap, vmin, vmax, bias, ax,
         cbar_label = f'{geomap.name:s} ({geomap.assign_attrs().units:s})'
         plt.colorbar(cf, orientation='vertical', shrink=0.8, pad=0.05, label=cbar_label)
 
-    ax.text(0.9, 0.95, f'{tag:s}', fontsize=12,
+    ax.text(0.98, 0.99, f'{tag:s}', fontsize=12,
             horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
 
     if statistics:
-        ax.text(0.95, 0.05, f'mean = {geomap.mean().values:4.2f}', fontsize=10,
+        ax.text(0.95, 0.05, f'{geomap.mean().values:4.2f}', fontsize=10,
                 horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
 
     return cf
@@ -1277,7 +1286,7 @@ def plot_diurnal_boxplot_in_classif(classif: pd.DataFrame, field: xr.DataArray,
     # ----------------------------- plot -----------------------------
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 6), facecolor='w', edgecolor='k', dpi=300)
 
-    seaborn.boxplot(x='Hour', y=data_in_class.name, hue='Class', data=df, ax=ax,
+    sns.boxplot(x='Hour', y=data_in_class.name, hue='Class', data=df, ax=ax,
                     showmeans=True, showfliers=False)
     # Seaborn's showmeans=True argument adds a mark for mean values in each box.
     # By default, mean values are marked in green color triangles.
@@ -1334,7 +1343,6 @@ def test_exact_mc_permutation(small, big, nmc, show: bool = True):
 
     if show:
         plt.close("all")
-        import seaborn as sns
 
         f = plt.figure()
         ax = f.add_subplot(111)
@@ -1385,7 +1393,7 @@ def get_values_multilevel_dict(dic: dict, level: int = 2):
     """
     values_list = []
     for kk in dic.keys():
-        print(type(dic[kk]))
+        # print(type(dic[kk]))
         if isinstance(dic[kk], int):
             values_list.append(dic[kk])
         else:
@@ -1415,7 +1423,12 @@ def cal_daily_total_energy(da: xr.DataArray, energy_unit: str = 'kWh'):
     hourly_da = da.interp(time=np.sort(np.array(hours).flatten()),
                           method='linear', kwargs={"fill_value": "extrapolate"})
 
+    # add all hourly values to get a sum
     b = hourly_da.groupby(hourly_da.time.dt.strftime('%Y-%m-%d')).sum(dim='time')
+    # ref: The daily irradiation in Wh/m2 will be obtained as the sum of all hourly values in W/m2.
+    # For instance, if the irradiance is constant at 100 W/m2 during 10 hours,
+    # the daily total irradiation is 1000 Wh/m2=1 kWh/m2.
+    # The same principle applies to 10-min values, but then the total needs to be divided by 6.
 
     b = b.rename({"strftime": 'time'})
     b = b.assign_coords(time=('time', pd.DatetimeIndex(b.time)))
@@ -1439,14 +1452,21 @@ def cal_daily_total_energy(da: xr.DataArray, energy_unit: str = 'kWh'):
 # ...     return xr.apply_ufunc(func, a, b)
 
 
-def plot_climate_index(x: np.ndarray, y, index_name: str, alpha=0.5,
+def plot_climate_index(x: np.ndarray, y, index_name: str,
+                       by_limit: bool = True,
+                       by_percentage: bool = False,
+                       limits=[-1, 1],
+                       alpha=0.5,
                        x_label: str = 'time', y_label: str = 'index',
                        title_add_word: str = '',
                        scatter: bool = False,
                        ):
     """
-    plot climate index
+    plot climate index, by percentage i.e. alpha or by limits i.e., limits
     Args:
+        limits:
+        by_percentage:
+        by_limit:
         scatter ():
         title_add_word ():
         y_label ():
@@ -1463,7 +1483,11 @@ def plot_climate_index(x: np.ndarray, y, index_name: str, alpha=0.5,
     fig, ax = plt.subplots(figsize=(12, 8), dpi=300)
     plt.plot(x, y, label=index_name)
 
-    down, up = get_confidence_interval(y, alpha=alpha)
+    if by_percentage:
+        down, up = get_confidence_interval(y, alpha=alpha)
+
+    if by_limit:
+        down, up = limits
 
     if np.abs(down) != np.abs(up):
         plt.text(0.05, 0.05, 'up and bottom limits are different since the mean is not zero', color='r',
@@ -1472,23 +1496,29 @@ def plot_climate_index(x: np.ndarray, y, index_name: str, alpha=0.5,
     plt.hlines(up, x[0], x[-1], colors='black', linewidth=1, linestyles='dashed')
     plt.hlines(down, x[0], x[-1], colors='black', linewidth=1, linestyles='dashed')
 
-    plt.fill_between(x, up, y, where=(y > up), interpolate=True, color='r', label=str(f'{alpha * 100:4.2f} %'))
-    plt.fill_between(x, down, y, where=(y < down), interpolate=True, color='r')
+    if by_percentage:
+        plt.fill_between(x, up, y, where=(y > up), interpolate=True, color='r', alpha=0.5,
+                         label=str(f'{alpha * 100:4.2f} %'))
+        plt.fill_between(x, down, y, where=(y < down), interpolate=True, color='r', alpha=0.5)
+    if by_limit:
+        plt.fill_between(x, up, y, where=(y > up), interpolate=True, color='r', alpha=0.5,
+                         label=str(f'amplitude > {up:4.1f}'))
+        plt.fill_between(x, down, y, where=(y < down), interpolate=True, color='r', alpha=0.5)
 
     if scatter:
         plt.scatter(x, y, marker='^', color='green')
 
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
+    plt.xlabel(x_label, fontsize=18)
+    plt.ylabel(y_label, fontsize=18)
 
-    plt.legend()
+    plt.legend(fontsize=18)
 
     title = index_name
 
     if title_add_word is not None:
         title = title + ' ' + title_add_word
 
-    plt.title(title)
+    plt.title(title, fontsize=18)
 
     # ----------------------------- end of plot -----------------------------
 
@@ -1579,13 +1609,20 @@ def plot_diurnal_curve_in_classif(classif: pd.DataFrame, field_1D: xr.DataArray,
     print(f'got plot ')
 
 
-def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArray,
+def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame,
+                                        field: xr.DataArray,
                                         area: str, vmax, vmin,
                                         bias: bool = True,
                                         plot_wind: bool = 0,
+                                        wind_anomaly: bool = 0,
+                                        plot_field_flux: bool = 0,
+                                        field_flux_data: xr.DataArray = None,
+                                        field_flux_name: str = 'field flux',
+                                        plt_type: str = 'contourf',
                                         only_significant_points: bool = 0,
+                                        str_class_names: list = None,
                                         suptitle_add_word: str = '',
-                                        plot_big_data_test: int = 1):
+                                        data_slice_test: int = 1):
     """
         diurnal field in classification, data are processed before input to this question
     note:
@@ -1593,6 +1630,12 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
         the field, such as rsds, will be hourly anomaly, in one class, value at one hour - multiyear
         seasonal hourly mean, (%m-%d-%h), which is the difference between in-class value and all-day value.
     Args:
+        plt_type:
+        plot_field_flux:  plot surface field flux instead of only wind, or wind anomaly (controled by wind_anomaly)
+        field_flux_data: such as specific humidity to plot moisture flux
+        field_flux_name:
+        str_class_names:  class may have a name, otherwise use the value in column 'class' in the DataFrame
+        wind_anomaly:  if plot anomaly of surface wind
         classif (pandas.core.frame.DataFrame): DatetimeIndex with class name (1,2,3...)
         field (xarray.core.dataarray.DataArray): with time dim. field may in different days of classif,
             it will be selected by the available classif day by internal function.
@@ -1603,7 +1646,7 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
         plot_wind (int):
         only_significant_points (int):
         suptitle_add_word (str):
-        plot_big_data_test (int): if apply the data filter defined inside the function to boost the code,
+        data_slice_test (int): if apply the data filter defined inside the function to boost the code,
             usually defined in the project level in the config file.
 
     Returns:
@@ -1626,8 +1669,9 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
 
     # ----------------------------- plotting -----------------------------
     fig, axs = plt.subplots(nrows=n_class, ncols=n_hour, sharex='row', sharey='col',
-                            figsize=(19, 10), dpi=300, subplot_kw={'projection': ccrs.PlateCarree()})
-    fig.subplots_adjust(left=0.1, right=0.85, bottom=0.02, top=0.9, wspace=0.09, hspace=0.01)
+                            figsize=(2 * n_hour, 1.25 * n_class), dpi=300,
+                            subplot_kw={'projection': ccrs.PlateCarree()})
+    fig.subplots_adjust(left=0.1, right=0.85, bottom=0.02, top=0.9, wspace=0.05, hspace=0.03)
 
     for cls in range(n_class):
         print(f'plot class = {cls + 1:g}')
@@ -1645,7 +1689,8 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
             data_in_hour = in_class_dropna.where(in_class_dropna.time.dt.hour == hours[hour], drop=True)
 
             if only_significant_points:
-                sig_map = value_significant_of_anomaly_2d_mask(field_3d=data_in_hour)
+                sig_map = value_significant_of_anomaly_2d_mask(field_3d=data_in_hour,
+                                                               fdr_correction=1)
                 data_1h = filter_2d_by_mask(data_in_hour, mask=sig_map)
             else:
                 data_1h = data_in_hour
@@ -1660,15 +1705,26 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
                                       vmax=vmax, vmin=vmin, bias=bias,
                                       plot_cbar=False,
                                       statistics=0,
+                                      plt_type=plt_type,
+                                      cmap='default',
                                       ax=ax, domain=area, tag='')
 
             if cls == 0:
-                ax.set_title(f'{hours[hour]:g}H00')
+                ax.set_title(f'{hours[hour]:g}:00', fontsize=20)
             if hour == 0:
                 plt.ylabel(f'#_{str(class_names[cls]):s} (num = {num_record:g})')
                 # TODO: add this class name/number to y axis
-                # ax.text(0.9, 0.95, f'num={num_record:g}', fontsize=12,
-                #         horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+
+            # class name:
+            if str_class_names is None:
+                ax.text(0.01, 0.98, f'#{cls + 1:g}', fontsize=20,
+                        horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
+            else:
+                ax.text(0.01, 0.98, f'{str_class_names[cls]:s}', fontsize=18,
+                        horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
+
+            ax.text(0.98, 0.01, f'{np.float(data_1h_mean.mean()):4.2f}', fontsize=16,
+                    horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
 
             ax.set_ylabel(f'#_{str(class_names[cls]):s}', color='b')
             ax.set_xlabel('xxx')
@@ -1689,15 +1745,37 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
         v = read_to_standard_da(v_file, 'v10')
         # classif OLR is from 1979 to 2018.
 
-        if plot_big_data_test:
+        if data_slice_test:
             u = u.sel(time=slice('19990101', '20001201'))
             v = v.sel(time=slice('19990101', '20001201'))
+
+        if wind_anomaly:
+            print(f'plot surface wind anomaly ...')
+
+            u_anomaly = anomaly_daily(u)
+            v_anomaly = anomaly_daily(v)
+
+            u = u_anomaly
+            v = v_anomaly
+
+        if plot_field_flux:
+            # such as moisture flux
+            u_units = u.units
+            u = u * field_flux_data
+            u = u.assign_attrs({'units': u_units})
+            u = u.rename(field_flux_name)
+
+            v = v * field_flux_data
+            v = v.assign_attrs({'units': u_units})
+            v = v.rename(field_flux_name)
+
+            # after calculation the units are lost, get it back.
 
         u_in_class = get_data_in_classif(u, classif, significant=False, time_mean=False)
         v_in_class = get_data_in_classif(v, classif, significant=False, time_mean=False)
 
         for cls in range(n_class):
-            print(f'plot wind in class = {cls + 1:g}')
+            print(f'plot surface flux in class = {cls + 1:g}')
 
             u_in_1class = u_in_class.where(u_in_class['class'] == class_names[cls], drop=True).squeeze()
             v_in_1class = v_in_class.where(v_in_class['class'] == class_names[cls], drop=True).squeeze()
@@ -1712,20 +1790,41 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
                 u_1hour = u_hourly_mean.sel(hour=hours[hour])
                 v_1hour = v_hourly_mean.sel(hour=hours[hour])
 
+                # parameter to define the quiver length and key:
+                if plot_field_flux:
+                    if bias:
+                        field_scale = field_flux_data.std()
+                    else:
+                        field_scale = field_flux_data.mean()
+                else:
+                    field_scale = 1
+
                 plot_wind_subplot(area='bigreu',
                                   lon=u_1hour.lon, lat=v_1hour.lat,
                                   u=u_1hour,
                                   v=v_1hour,
-                                  ax=ax, bias=0)
+                                  bias=wind_anomaly,
+                                  plot_field_flux=plot_field_flux,
+                                  field_scale=field_scale,
+                                  ax=ax)
 
     # ----------------------------- end of plot -----------------------------
     cbar_label = f'{field.name:s} ({field.assign_attrs().units:s})'
     cb_ax = fig.add_axes([0.87, 0.2, 0.01, 0.7])
-    plt.colorbar(cf, orientation='vertical', shrink=0.8, pad=0.05, cax=cb_ax, label=cbar_label)
+    cb = plt.colorbar(cf, orientation='vertical', shrink=0.8, pad=0.05, cax=cb_ax)
+    cb.ax.tick_params(labelsize=24)
+    cb.set_label(label=cbar_label, fontsize=24)
 
     # ----------------------------- title -----------------------------
     if plot_wind:
-        suptitle_add_word += ' (surface wind)'
+        suptitle_add_word += ' wind'
+        if wind_anomaly:
+            suptitle_add_word += ' anomaly surface'
+        else:
+            suptitle_add_word += ' mean surface'
+
+    if plot_field_flux:
+        suptitle_add_word += f' {field_flux_name:s}'
 
     title = f'{field.assign_attrs().long_name:s} in class'
 
@@ -1738,25 +1837,29 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame, field: xr.DataArr
 
     plt.savefig(f'./plot/{title.replace(" ", "_"):s}'
                 f'.hourly_mean.{field.name:s}.in_class.{area:s}.'
-                f'wind_{plot_wind:g}.only_sig_{only_significant_points:g}.'
-                f'test_{plot_big_data_test:g}.png', dpi=300)
+                f'wind_{plot_wind:g}.wind_anomaly_{wind_anomaly:g}.'
+                f'only_sig_{only_significant_points:g}.'
+                f'test_data_{data_slice_test:g}.png', dpi=300)
     plt.show()
     print(f'got plot ')
 
 
-def plot_wind_subplot(area: str,
-                      lon: xr.DataArray, lat: xr.DataArray,
+def plot_wind_subplot(area: str, lon: xr.DataArray, lat: xr.DataArray,
                       u: xr.DataArray, v: xr.DataArray,
-                      ax, bias: int = 0):
+                      ax,
+                      plot_field_flux: bool = 0,
+                      field_scale=1, bias: int = 0):
     """
     to plot circulation to a subplot
     Args:
+        plot_field_flux: plot field flux or not
+        field_scale: mean scales of field variable, n_scale and key will change accordingly.
         area ():
         lon ():
         lat ():
         u ():
         v ():
-        ax ():
+        ax (object):
         bias (int):
 
     Returns:
@@ -1779,7 +1882,7 @@ def plot_wind_subplot(area: str,
             n_scale = 20
             key = 5
             # set the n_scale to define vector length (higher value smaller vector), and key for sample vector in m/s
-        else:
+        if bias:
             n_scale = 3
             key = 0.5
 
@@ -1795,6 +1898,11 @@ def plot_wind_subplot(area: str,
             n_scale = 0.3
             key = 1
 
+    if plot_field_flux:
+        # the n_scale are really difficult to find, so use the default value
+        n_scale = None
+        key = float(key * field_scale)
+
     quiver_slices = slice(None, None, n_sclice)
     quiver_kwargs = {'headlength': headlength,
                      'headwidth': headwidth,
@@ -1807,15 +1915,16 @@ def plot_wind_subplot(area: str,
                             u.values[quiver_slices, quiver_slices],
                             v.values[quiver_slices, quiver_slices],
                             linewidth=1.01, edgecolors='k',
+                            alpha=0.4,
                             # linewidths is only for controlling the outline thickness,
                             # when an outline of a different color is explicitly requested.
                             # it looks like you have to explicitly set the edgecolors kwarg
                             # to get what you want now
-                            color='blue', zorder=2, **quiver_kwargs)
+                            color='green', zorder=2, **quiver_kwargs)
 
-    ax.quiverkey(circulation, 0.08, 0.1, key, f'{key:g}' + r'$ {m}/{s}$',
+    ax.quiverkey(circulation, 0.08, -0.1, key, f'{key:g}' + r'$ {m}/{s}$',
                  labelpos='E',
-                 color='r', labelcolor='r', coordinates='axes')
+                 color='k', labelcolor='k', coordinates='axes')
     # ----------------------------- end of plot wind -----------------------------
 
 
@@ -1823,12 +1932,14 @@ def plot_field_in_classif(field: xr.DataArray, classif: pd.DataFrame,
                           area: str, vmax='default', vmin='default',
                           bias: bool = 1,
                           plt_type: str = 'pcolormesh',
+                          cmap=plt.cm.coolwarm,
                           plot_wind: bool = 0,
                           only_significant_points: bool = 0,
                           suptitle_add_word: str = ''):
     """
     to plot field in classif
     Args:
+        cmap:
         field ():
         classif ():
         area ():
@@ -1876,7 +1987,7 @@ def plot_field_in_classif(field: xr.DataArray, classif: pd.DataFrame,
 
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex='row', sharey='col',
                             figsize=fig_size, dpi=220, subplot_kw={'projection': ccrs.PlateCarree()})
-    fig.subplots_adjust(left=0.1, right=0.85, bottom=0.12, top=0.9, wspace=0.09, hspace=0.15)
+    fig.subplots_adjust(left=0.03, right=0.70, bottom=0.10, top=0.9, wspace=0.05, hspace=0.05)
     # axs = axs.flatten()
     axs = axs.ravel()
 
@@ -1886,34 +1997,54 @@ def plot_field_in_classif(field: xr.DataArray, classif: pd.DataFrame,
 
         num = len(classif[classif['class'] == cls])
 
-        ax = set_active_axis(axs=axs, n=c)
+        # use vertical alignment:
+        if len(axs) < 4:
+            # case of 1 column, see above lines
+            subplot_num = c
+        else:
+            vertical_subplot_num = np.array([x * 2 for x in range(nrows)] +
+                                            [x * 2 + 1 for x in range(nrows)])
+            subplot_num = vertical_subplot_num[c]
+
+        ax = set_active_axis(axs=axs, n=subplot_num)
         set_basemap(area=area, ax=ax)
 
-        plt.title('#' + str(int(cls)), fontsize=16, pad=3)
+        # plt.title('#' + str(int(cls)), fontsize=20, pad=3)
 
-        cmap, norm = set_cbar(vmax=vmax, vmin=vmin, n_cbar=20, bias=bias)
+        # to use the cmap from input arguments:
+        cmap = cmap
 
         cf = plot_geo_subplot_map(geomap=class_mean[:, :, c],
                                   vmax=vmax, vmin=vmin, bias=bias,
                                   domain=area,
+                                  cmap=cmap,
                                   plot_cbar=False,
                                   statistics=0,
-                                  type=plt_type,
+                                  plt_type=plt_type,
                                   ax=ax, tag='')
 
-        # cf = plt.contourf(field.lon, field.lat, class_mean[:, :, c], levels=norm.boundaries,
-        #                   cmap=cmap, norm=norm, transform=ccrs.PlateCarree(), extend='both')
-
         fldmean = class_mean[:, :, c].mean().values
-        ax.text(0.05, 0.95, f'num = {num:4.2f}, ({num * 100 / total_num: 4.2f}%)', fontsize=16,
+        # number of class
+        ax.text(0.05, 0.95, '#' + str(int(cls)), fontsize=24,
                 horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
-        ax.text(0.9, 0.05, f'mean = {fldmean:4.2f}', fontsize=16,
+        ax.text(0.98, 0.95, f'{num * 100 / total_num: 4.0f}%', fontsize=24,
+                horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+        # ax.text(0.05, 0.95, f'{int(num):g} day,{num * 100 / total_num: 4.2f}%', fontsize=24,
+        #         horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
+        ax.text(0.95, 0.000, f'mean: {fldmean:4.2f}', fontsize=26,
                 horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
     # ----------------------------- end of plot -----------------------------
-    cb_ax = fig.add_axes([0.13, 0.1, 0.7, 0.015])
+    # horizontal cb position:
+    # cb_ax = fig.add_axes([0.13, 0.1, 0.7, 0.015])
+    # vertical cb position:
+    cb_ax = fig.add_axes([0.72, 0.12, 0.03, 0.75])
+    # horizontal starting point, vertical from bottom, width, and height
+
     cbar_label = f'{field.assign_attrs().long_name:s} ({field.assign_attrs().units:s})'
-    cb = plt.colorbar(cf, orientation='horizontal', shrink=0.7, pad=0.1, label=cbar_label, cax=cb_ax)
-    cb.ax.tick_params(labelsize='large')
+    # cb = plt.colorbar(cf, orientation='horizontal', shrink=0.7, pad=0.1,  cax=cb_ax)
+    cb = plt.colorbar(cf, orientation='vertical', shrink=0.7, pad=0.1, cax=cb_ax)
+    cb.ax.tick_params(labelsize=24)
+    cb.set_label(label=cbar_label, fontsize=24)
 
     # ----------------------------- surface wind -----------------------------
     if plot_wind:
@@ -1962,7 +2093,7 @@ def plot_field_in_classif(field: xr.DataArray, classif: pd.DataFrame,
     if suptitle_add_word is not None:
         title = title + '\n ' + suptitle_add_word
 
-    fig.suptitle(title, fontsize=16)
+    fig.suptitle(title, fontsize=20)
     plt.savefig(f'plot/{field.name:s}_{area:s}_sig{only_significant_points:g}_wind{plot_wind:g}_classif.'
                 + title.replace(" ", "_").replace("\n", "") + '.png', dpi=220)
     plt.show()
@@ -1970,6 +2101,8 @@ def plot_field_in_classif(field: xr.DataArray, classif: pd.DataFrame,
 
 
 def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
+                     contour: bool = False,
+                     area: str = 'SA_swio',
                      only_significant_points: int = 0):
     """
     plot ttt phase by olr
@@ -2003,8 +2136,12 @@ def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
 
     # ----------------------------- fig config -----------------------------
     fig, axs = plt.subplots(nrows=4, ncols=2, sharex='row', sharey='col',
-                            figsize=(8, 10), dpi=220, subplot_kw={'projection': ccrs.PlateCarree()})
-    fig.subplots_adjust(left=0.1, right=0.85, bottom=0.12, top=0.9, wspace=0.1, hspace=0.1)
+                            figsize=(8, 8), dpi=220, subplot_kw={'projection': ccrs.PlateCarree()})
+    fig.subplots_adjust(left=0.1, right=0.80, bottom=0.1, top=0.9, wspace=0.05, hspace=0.01)
+
+    # to make it vertical, plot in column:
+    axs = axs.T
+
     axs = axs.ravel()
 
     for regime in [1, 2, 3, 4, 5, 6, 7]:
@@ -2014,13 +2151,14 @@ def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
         if len(date_phase_one) < 1:
             print(f'Sorry, I got 0 day in phase = {regime:g}')
             print(olr_regimes)
+
             break
 
         anomaly_olr_1phase: xr.DataArray = olr_anomaly.sel(time=date_phase_one)  # filter
         # if there's a error: check
         # 1) if data_phase_one is empty
-        # 2) if the Time is 00:00:00
-        olr_1phase: xr.DataArray = olr.sel(time=date_phase_one)  # filter
+        olr_1phase = olr.where(
+            olr.time.dt.strftime('%Y-%m-%d').isin(date_phase_one.strftime('%Y-%m-%d')), drop=True)
 
         # nday = anomaly_olr_1phase.shape[0]
         anomaly_mean: xr.DataArray = anomaly_olr_1phase.mean(axis=0)
@@ -2031,25 +2169,30 @@ def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
         #     print('the same')
 
         if only_significant_points:
-            sig_map: xr.DataArray = value_mjo_significant_map(phase=regime, grid=anomaly_mean, month=month)
+            sig_map: xr.DataArray = value_olr_calssif_significant_map(
+                phase=regime, grid=anomaly_mean, month=month, area=area)
             # olr_mean = filter_2d_by_mask(olr_mean, mask=sig_map)
             anomaly_mean = filter_2d_by_mask(anomaly_mean, mask=sig_map)
 
         ax = set_active_axis(axs=axs, n=regime - 1)
-        set_basemap(area='SA_swio', ax=ax)
+        set_basemap(area=area, ax=ax)
 
         # ----------------------------- start to plot -----------------------------
-        plt.title('#' + str(regime) + '/' + str(7), pad=3)
+        # plt.title('#' + str(regime) + '/' + str(7), pad=3)
 
-        vmax = 70
-        vmin = -70
+        vmax = 40
+        vmin = -40
 
         lon, lat = np.meshgrid(anomaly_mean.lon, anomaly_mean.lat)
-        level_anomaly = np.arange(vmin, vmax + 1, 10)
-        cf1 = plt.contourf(lon, lat, anomaly_mean, level_anomaly, cmap='PuOr_r', vmax=vmax, vmin=vmin)
-        level_olr = np.arange(140, 280, 20)
-        cf2 = plt.contour(lon, lat, olr_mean, level_olr, cmap='magma_r', vmax=280, vmin=140)
-        ax.clabel(cf2, level_olr, inline=True, fmt='%2d', fontsize='xx-small')
+        level_anomaly = np.arange(vmin, vmax + 1, 5)
+        cf1 = plt.contourf(lon, lat, anomaly_mean, level_anomaly, cmap='PuOr_r',
+                           vmax=vmax, vmin=vmin, extend='both')
+
+        if contour:
+            level_olr = np.arange(140, 280, 20)
+            cf2 = plt.contour(lon, lat, olr_mean, level_olr, cmap='magma_r', vmax=280, vmin=140)
+            ax.clabel(cf2, level_olr, inline=True, fmt='%2d', fontsize='xx-small')
+
         ax.coastlines()
 
         # cf = plt.pcolormesh(lon, lat, consistency_percentage_map,
@@ -2057,20 +2200,25 @@ def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
 
         # ----------------------------- end of plot -----------------------------
 
-        ax.text(0.9, 0.95, f'{month:s}', fontsize=12,
+        ax.text(0.98, 0.90, f'{month:s}', fontsize=24,
                 horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
 
-        ax.text(0.8, 0.1, f'{olr_anomaly.name:s}', fontsize=12,
+        ax.text(0.15, 0.98, f'#{regime:g}', fontsize=24,
                 horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
 
-        test = 1
+        ax.text(0.99, 0.01, f'{olr_anomaly.name:s}', fontsize=24,
+                horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
+
+        test = 0
         if test:
             print(f'save netcdf file @regimes to check')
             file = f'./ttt.regime.{regime}.nc'
             anomaly_mean.to_netcdf(file)
 
     cbar_label = f'OLR ({olr_anomaly.assign_attrs().units:s})'
-    plt.colorbar(cf1, ticks=np.ndarray.tolist(level_anomaly), label=cbar_label, ax=axs)
+    cb = plt.colorbar(cf1, ticks=np.ndarray.tolist(level_anomaly), ax=axs, extend="max")
+    cb.ax.tick_params(labelsize=24)
+    cb.set_label(label=cbar_label, fontsize=24)
 
     title = f'olr regimes'
     plt.suptitle(title)
@@ -2079,7 +2227,7 @@ def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
     # cb_ax = fig.add_axes([0.13, 0.1, 0.7, 0.015])
     # cb = plt.colorbar(cf1, orientation='horizontal', shrink=0.7, pad=0.05, label=cbar_label, cax=cb_ax)
 
-    plt.savefig(f'./plot/ttt_regimes_sig_{only_significant_points:g}.png', dpi=220)
+    plt.savefig(f'./plot/ttt_regimes_{area:s}_sig_{only_significant_points:g}.png', dpi=220)
 
     plt.show()
     print(f'got plot')
@@ -2190,7 +2338,7 @@ def plot_join_heatmap_boxplot(da: xr.DataArray):
 
     # heatmap:
     ax = fig.add_subplot(gridspec[1, 1])
-    heat = seaborn.heatmap(matrix, ax=ax,
+    heat = sns.heatmap(matrix, ax=ax,
                            xticklabels=2, yticklabels=True)
 
     # boxplot for month:
@@ -2198,13 +2346,328 @@ def plot_join_heatmap_boxplot(da: xr.DataArray):
     mon_mean['month'] = mon_mean.index.month
 
     ax_left = fig.add_subplot(gridspec[1, 0])
-    seaborn.set_theme(style="ticks")
-    mon_box_plot = seaborn.boxplot(x='month', y=da.name, data=mon_mean, ax=ax_left,
+    sns.set_theme(style="ticks")
+    mon_box_plot = sns.boxplot(x='month', y=da.name, data=mon_mean, ax=ax_left,
                                    orient="h", palette="vlag", showmeans=True)
 
-    # mon_box_plot = seaborn.boxplot(x='month', y=da.name, data=mon_mean, ax=ax_left,
+    # mon_box_plot = sns.boxplot(x='month', y=da.name, data=mon_mean, ax=ax_left,
     #                                orient="h", palette="vlag", showmeans=True)
     plt.show()
+
+
+def plot_matrix_2d_df(
+        df: pd.DataFrame = None,
+        x_column: str = 'x', y_column: str = 'y',
+        x_label: str = None, y_label: str = None,
+        z_column: str = 'z', z_label: str = None,
+        x_plt_limit: list = [-1, 1], y_plt_limit: list = [-1, 1],
+        cut_off: bool = 0, cut_value: float = 1,
+        z_plt_limit: list = [-1, 1],
+        statistics: bool = 1,
+        occurrence: bool = 1,
+        suptitle_add_word: str = ""):
+
+    # definition:
+    class_names_x: list = list(set(df[x_column].sort_values().values))
+    class_names_y: list = list(set(df[y_column].sort_values().values))
+
+    n_class_x = len(class_names_x)
+    n_class_y = len(class_names_y)
+
+    if occurrence:
+        # get cross matrix: occurrence
+        cross = np.zeros((len(class_names_y), len(class_names_x)))
+        for i in range(len(class_names_y)):
+            class_one = df.loc[df[y_column] == class_names_y[i]]
+            for j in range(len(class_names_x)):
+                class_cross = class_one.loc[class_one[x_column] == class_names_x[j]]
+                cross[i, j] = len(class_cross)
+        cross_df = pd.DataFrame(data=cross, index=class_names_y, columns=class_names_x).astype(int)
+
+    # ----------------------------- plot -----------------------------
+    # fig size:
+    fig_width = int(n_class_x * 1.5)
+    fig_height = n_class_y + 1
+
+    n_column = n_class_x + 1
+    n_raw = n_class_y + 1
+
+    fig, axs = plt.subplots(nrows=n_raw, ncols=n_column, sharex=True, sharey=True,
+                            figsize=(fig_width, fig_height), dpi=300)
+    fig.subplots_adjust(left=0.1, right=0.9, bottom=0.10, top=0.9, wspace=0.05, hspace=0.05)
+
+    # plot for matrix in [1 ]
+    # mixing this two class first.
+
+    for x in range(n_class_x):
+        for y in range(n_class_y):
+            # find days in this mixing class
+            mix_class = df.where(
+                (df[x_column] == class_names_x[x]) &
+                (df[y_column] == class_names_y[y])).dropna()
+
+            ax = axs[y+1, x+1]
+            plt.sca(axs[y+1, x+1])
+            # plot:
+            sns.histplot(data=mix_class[z_column], kde=True, stat='density',
+                         binwidth=0.5,
+                         ax=ax)
+            if y == n_class_y:
+                ax.set(xlabel=f'Month {class_names_x[x]}')
+            else:
+                ax.set(xlabel=None)
+            ax.set(ylabel=None)
+            plt.xlim(z_plt_limit[0], z_plt_limit[1])
+            # plt.legend(z_column)
+            print(x, y)
+
+            if statistics:
+                count = len(mix_class)
+                ratio = count * 100/len(df)
+                tag = f'{count:g},{ratio:4.0f}%'
+                ax.text(0.9, 0.95, tag, fontsize=12, horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+
+                if cut_off:
+                    plt.axvline(x=cut_value, color='red', linestyle='--', linewidth=2, label='')
+                    cut_count = len(mix_class[mix_class[z_column] > cut_value].dropna())
+                    ax.text(0.9, 0.75,
+                            f'{cut_count*100/count:4.1f}%', fontsize=10, color='red',
+                            horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+                print(f'cut', cut_count, count, len(df))
+
+    # plot x class: in [0, 1] to [0, -1]
+    for x in range(n_class_x):
+
+        plt.sca(axs[0, x + 1])
+        ax = axs[0, x + 1]
+
+        # data:
+        mix_class = df.where(df[x_column] == class_names_x[x]).dropna()
+
+        # plot:
+        sns.histplot(data=mix_class[z_column], kde=True, stat='density',
+                     binwidth=0.5,
+                     ax=ax)
+        ax.set(ylabel=None)
+        plt.xlim(z_plt_limit[0], z_plt_limit[1])
+
+        plt.title(f'{x_label:s} {class_names_x[x]}')
+
+        if statistics:
+            count = len(mix_class)
+            ratio = count * 100 / len(df)
+            tag = f'{count:g},{ratio:4.0f}%'
+            ax.text(0.9, 0.95, tag, fontsize=12, horizontalalignment='right', verticalalignment='top',
+                    transform=ax.transAxes)
+
+            if cut_off:
+                plt.axvline(x=cut_value, color='red', linestyle='--', linewidth=2, label='')
+                cut_count = len(mix_class[mix_class[z_column] > cut_value].dropna())
+                ax.text(0.9, 0.75,
+                        f'{cut_count * 100 / count:4.1f}%', fontsize=10, color='red',
+                        horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+
+                print(f'cut', cut_count, count, len(df))
+        # plt.legend(z_column)
+
+    # plot y class: in [y, 0] to [-1, 0]
+    for y in range(n_class_y):
+
+        plt.sca(axs[y + 1, 0])
+        ax = axs[y + 1, 0]
+
+        # data:
+        mix_class = df.where(df[y_column] == class_names_y[y]).dropna()
+
+        # plot:
+        sns.histplot(data=mix_class[z_column], kde=True, stat='density',
+                     binwidth=0.5,
+                     ax=ax)
+
+        ax.set(xlabel=None)
+        plt.xlim(z_plt_limit[0], z_plt_limit[1])
+        if statistics:
+            count = len(mix_class)
+            ratio = count * 100 / len(df)
+            tag = f'{count:g},{ratio:4.0f}%'
+            ax.text(0.9, 0.95, tag, fontsize=12, horizontalalignment='right', verticalalignment='top',
+                    transform=ax.transAxes)
+
+            if cut_off:
+                plt.axvline(x=cut_value, color='red', linestyle='--', linewidth=2, label='')
+                cut_count = len(mix_class[mix_class[z_column] > cut_value].dropna())
+                ax.text(0.9, 0.75,
+                        f'{cut_count * 100 / count:4.1f}%', fontsize=10, color='red',
+                        horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+                print(f'cut', cut_count, count, len(df))
+
+    title = f'{suptitle_add_word:s} {z_label:s} in ' \
+            f'{x_column:s}_vs_{y_column:s} ' \
+            f'cut_off_{cut_off:g} ' \
+            f'cut_value_{cut_value:4.2f}'
+
+    fig.suptitle(title)
+
+    plt.savefig(f'./plot/{title.replace(" ", "_"):s}.'
+                f'.png', dpi=300)
+    plt.show()
+
+    print(f'job done')
+
+
+def plot_matrix_class_vs_class_field(class_x: pd.DataFrame,
+                                     class_y: pd.DataFrame,
+                                     field: xr.DataArray,
+                                     plt_type: str = 'pcolormesh',
+                                     vmax=30, vmin=-30, bias=1,
+                                     only_significant_points=0,
+                                     output_plot: str = 'class_vs_class_matrix_maps',
+                                     occurrence: bool = 1,
+                                     suptitle_add_word: str = ""):
+    """
+    plot the matrix of class vs class, with maps, of each single class and mixing class
+    class_df: DataFrame of one columns of classifications with DateTimeIndex, columns' names will be used.
+    $$: if plot occurrence, impact of class_x on class_y
+
+    param class_y:
+    :type class_y: pandas.core.frame.DataFrame
+    :param class_x:
+    :type class_x: pandas.core.frame.DataFrame
+    :param output_plot:
+    :type output_plot: str
+    :param occurrence: if occurrence is True, will plot numbers in the matrix by default
+    :type occurrence:
+    :param suptitle_add_word:
+    :type suptitle_add_word: str
+    :return:
+    :rtype: None
+
+    Args:
+        field:
+    """
+
+    # the input DataFrames may have different index, so merge two classes with DataTimeIndex:
+    class_df = class_x.merge(class_y, left_index=True, right_index=True)
+
+    # x direction:
+    column_name_x = class_x.columns[0]
+    # y direction:
+    column_name_y = class_y.columns[0]
+
+    class_name_x = sorted(set(class_x.values.ravel()))
+    class_name_y = sorted(set(class_y.values.ravel()))
+
+    # get cross matrix: occurrence
+    cross = np.zeros((len(class_name_y), len(class_name_x)))
+    for i in range(len(class_name_y)):
+        class_one = class_df.loc[class_df[column_name_y] == class_name_y[i]]
+        for j in range(len(class_name_x)):
+            class_cross = class_one.loc[class_one[column_name_x] == class_name_x[j]]
+            cross[i, j] = len(class_cross)
+    cross_df = pd.DataFrame(data=cross, index=class_name_y, columns=class_name_x).astype(int)
+
+    n_class_x = len(set(class_x.values.ravel()))
+    n_class_y = len(set(class_y.values.ravel()))
+
+    # ----------------------------- plot -----------------------------
+    fig_width = n_class_x + 1
+    fig_height = n_class_y + 1
+
+    n_column = n_class_x + 1
+    n_raw = n_class_y + 1
+
+    # prepare data:
+    field_in_class_x = get_data_in_classif(da=field, df=class_x, significant=only_significant_points,
+                                           time_mean=True)
+    field_in_class_y = get_data_in_classif(da=field, df=class_y, significant=only_significant_points,
+                                           time_mean=True)
+
+    # for plot mjo vs ttt change the fig size:
+    fig_height = n_class_y - 2.3
+
+    fig, axs = plt.subplots(nrows=n_raw, ncols=n_column, sharex='row', sharey='col',
+                            figsize=(fig_width, fig_height), dpi=300, subplot_kw={'projection': ccrs.PlateCarree()})
+    fig.subplots_adjust(left=0.05, right=0.8, bottom=0.10, top=0.9, wspace=0.01, hspace=0.01)
+
+    # plot for matrix in [1 ]
+    # mixing this two class first.
+
+    for x in range(n_class_x):
+        for y in range(n_class_y):
+            # find days in this mixing class
+            mix_class = class_df.where(
+                (class_df[column_name_x] == class_name_x[x]) &
+                (class_df[column_name_y] == class_name_y[y])).dropna()
+
+            field_mix_class = field.sel(time=mix_class.index.date)
+
+            if only_significant_points:
+                print(x, y)
+                print(field_mix_class.sizes)
+                sig_map: xr.DataArray = value_significant_of_anomaly_2d_mask(field_3d=field_mix_class, conf_level=0.05)
+                print(f'only work for anomaly/change/trend/ !!! compare to ZERO!!')
+                field_to_plot = filter_2d_by_mask(field_mix_class, mask=sig_map).mean(axis=0)
+            else:
+                field_to_plot = field_mix_class.mean(dim='time')
+
+            # plot:
+            cf = plot_geo_subplot_map(
+                geomap=field_to_plot,
+                bias=bias, domain='bigreu', tag='',
+                vmax=vmax, vmin=vmin, plt_type=plt_type,
+                plot_cbar=False,
+                ax=axs[y + 1, x + 1])
+
+    # plot x class: in [0, 1] to [0, -1]
+    for x in range(n_class_x):
+        plot_geo_subplot_map(
+            geomap=field_in_class_x.loc[{'class': class_name_x[x]}],
+            bias=bias, domain='bigreu', tag=f'#{class_name_x[x]:g}',
+            vmax=vmax, vmin=vmin, plt_type=plt_type,
+            plot_cbar=0,
+            ax=axs[0, x + 1])
+
+    # plot y class: in [y, 0] to [-1, 0]
+    for y in range(n_class_y):
+        plot_geo_subplot_map(
+            geomap=field_in_class_y.loc[{'class': class_name_y[y]}],
+            bias=bias, domain='bigreu', tag=f'#{class_name_y[y]:g}',
+            vmax=vmax, vmin=vmin, plt_type=plt_type,
+            plot_cbar=0,
+            ax=axs[y + 1, 0])
+
+    # ================================== end plot ==================================
+
+    # xlable:
+    for x in range(n_class_x):
+        ax = axs[n_class_y, x + 1]
+        ax.set_xlabel(f'Reg_{x+1:g}')
+    # ylable:
+    for y in range(n_class_y):
+        ax = axs[y + 1, 0]
+        ax.set_ylabel(f'Phase_{y + 1:g}')
+
+    # vertical cb position:
+    cb_ax = fig.add_axes([0.82, 0.12, 0.03, 0.75])
+    # horizontal starting point, vertical from bottom, width, and height
+
+    cbar_label = f'{field.assign_attrs().long_name:s} ({field.units:s})'
+    # cb = plt.colorbar(cf, orientation='horizontal', shrink=0.7, pad=0.1,  cax=cb_ax)
+    cb = plt.colorbar(cf, orientation='vertical', shrink=0.7, pad=0.1, cax=cb_ax)
+    cb.ax.tick_params(labelsize=18)
+    cb.set_label(label=cbar_label, fontsize=18)
+
+    title = f'{suptitle_add_word:s} {column_name_x:s}_vs_{column_name_y}_in_{field.name:s}_' \
+            f'{output_plot:s}'
+
+    plt.savefig(f'./plot/{title.replace(" ", "_"):s}'
+                f'significant_{only_significant_points:g}'
+                f'.png', dpi=300)
+    print(f'./plot/{title.replace(" ", "_"):s}.png')
+    plt.show()
+    print(title)
+
+    #------
 
 
 def plot_matrix_class_vs_class(class_x: pd.DataFrame,
@@ -2252,7 +2715,7 @@ def plot_matrix_class_vs_class(class_x: pd.DataFrame,
     cross_df = pd.DataFrame(data=cross, index=class_name_y, columns=class_name_x).astype(int)
 
     # ----------------------------- plot -----------------------------
-    fig = plt.figure()
+    fig = plt.figure(figsize=(8, 6), dpi=300)
     widths = [1, 3]
     heights = [1, 2]
     gridspec = fig.add_gridspec(ncols=2, nrows=2, width_ratios=widths, height_ratios=heights)
@@ -2330,43 +2793,6 @@ def plot_matrix_class_vs_class(class_x: pd.DataFrame,
     plt.savefig(output_plot, dpi=300)
 
     plt.show()
-
-    print(f'job done')
-
-
-def plot_2D_matrix(metrix_2d: np.ndarray, xlabel: str = 'x', ylabel: str = 'y'):
-
-    # get info from input:
-    n_class = int(metrix_2d.max())
-
-    year_start = metrix_2d.index.year.min()
-    year_end = metrix_2d.index.year.max()
-    n_year = year_end - year_start + 1
-
-    month_list = list(set(metrix_2d.index.month))
-
-    for i in range(n_class):
-        class_1 = metrix_2d.loc[metrix_2d.values == i + 1]
-        cross = np.zeros((n_year, len(month_list)))
-
-        for y in range(n_year):
-            for im in range(len(month_list)):
-                cross[y, im] = class_1.loc[
-                    (class_1.index.year == y + year_start) &
-                    (class_1.index.month == month_list[im])].__len__()
-
-        print(f'# ----------------- {n_class:g} -> {i + 1:g} -----------------------------')
-
-        df = pd.DataFrame(data=cross, index=range(year_start, year_start + n_year), columns=month_list)
-        df = df.astype(int)
-
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 6), facecolor='w', edgecolor='k', dpi=300)
-
-        plot_color_matrix(df=df, ax=ax, cbar_label='count')
-
-        plt.suptitle(f'C{n_class:g} -> C{i + 1:g}')
-        plt.savefig(f'./plot/{output_plot:s}', dpi=220)
-        plt.show()
 
     print(f'job done')
 
@@ -2468,6 +2894,57 @@ def select_area_from_str(da: xr.DataArray, area: str):
     da2 = da1.where(np.logical_and(da1.latitude > lonlat[2], da1.latitude < lonlat[3]), drop=True)
 
     return da2
+
+
+def plot_mjo_monthly_distribution(mjo: pd.DataFrame,
+                                  instense: bool = False):
+    """
+    plot histogram of mjo
+    :return:
+    """
+
+    mjo = mjo.assign(Month=lambda df: df.index.month)
+
+    # ----------------------------- filters -----------------------------
+    if instense:
+        mjo = mjo[mjo.amplitude > 1]
+
+    # no big difference when applying these filters,
+    # seems weak MJO is random.
+    # ----------------------------- filters -----------------------------
+
+    count: pd.Series = mjo.groupby(['phase', 'Month']).phase.count()
+    # coding: counting one column
+
+    df = pd.DataFrame({'count': count}).reset_index()
+    fig = plt.figure(figsize=(12, 6), dpi=300)
+    ax = fig.add_subplot(111)
+
+    sns.set(style="whitegrid")
+    ax = sns.barplot(x='Month', y="count", hue=f'phase', data=df)
+
+    title1 = f'mjo monthly distribution big_amplitude={instense:g}'
+    plt.suptitle(title1)
+    plt.savefig(f'./plot/barplot.{title1.replace(" ", "_"):s}.'
+                f'.png', dpi=300)
+    plt.show()
+
+    # plot every phase:
+    fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(12, 14), dpi=220)
+    axs = axs.flatten()
+
+    for phase in range(8):
+        phase_1: pd.Series = count.loc[phase + 1]
+        # multi-index selection
+        df_1 = pd.DataFrame({f'phase_{phase + 1:g}': phase_1})
+        ax_1 = df_1.plot(kind='bar', ax=axs[phase], rot=0)
+        # coding: direction of x label in barplot
+
+    plt.suptitle(title1)
+    plt.savefig(f'./plot/month_matrix.{title1.replace(" ", "_"):s}.'
+                f'.png', dpi=300)
+    plt.show()
+    print(f'job done')
 
 
 def plot_mjo_phase(mjo_phase: pd.DataFrame, olr: xr.DataArray, high_amplitude: bool, month: str,
@@ -2780,9 +3257,11 @@ def get_T_value(conf_level: float = 0.05, dof: int = 10):
 # infinity   1.282   1.645   1.960   2.326   2.576   3.090
 
 
-def value_mjo_significant_map(phase: int, grid: xr.DataArray = 0, month: str = 0) -> xr.DataArray:
+def value_olr_calssif_significant_map(phase: int, grid: xr.DataArray = 0, month: str = 0,
+                                      area: str = 'bigreu') -> xr.DataArray:
     """
-    calculate significant map of mjo phase, depend on the input olr data from era5 analysis
+    calculate significant map of olr classification e.g., mjo phase or ttt regimes,
+     depend on the input olr data from era5 analysis
     ONLY in the swio area
     :param month: like JJA and DJF, etc
     :param grid: output sig_map remapped to gird. if grid = 0 , no interp
@@ -2793,14 +3272,17 @@ def value_mjo_significant_map(phase: int, grid: xr.DataArray = 0, month: str = 0
 
     # ----------------------------- read necessary data: era5 ttr reanalysis data
     # ttr_swio = xr.open_dataset(f'~/local_data/era5/ttr.era5.1999-2016.day.swio.nc')['ttr']
-    ttr_swio = read_to_standard_da(f'./local_data/era5/ttr.era5.1999-2016.day.swio.nc', var='ttr')
+    if area == 'SA_swio':
+        ttr_era5 = read_to_standard_da(f'~/local_data/era5/ttr/ttr.era5.1999-2016.day.swio.nc', var='ttr')
+    if area == 'bigreu':
+        ttr_era5 = read_to_standard_da(f'~/local_data/era5/ttr/ttr.era5.1999-2016.day.reu.nc', var='ttr')
 
     if isinstance(month, str):
-        ttr_swio = filter_xr_by_month(ttr_swio, month=month)
+        ttr_era5 = filter_xr_by_month(ttr_era5, month=month)
         mjo_phase: pd.DataFrame = filter_df_by_month(mjo_phase, month=month)
 
     # ----------------------------- anomaly OLR -----------------------------
-    olr_swio = convert_ttr_era5_2_olr(ttr=ttr_swio, is_reanalysis=True)
+    olr_swio = convert_ttr_era5_2_olr(ttr=ttr_era5, is_reanalysis=True)
     olr_swio_anomaly = anomaly_daily(olr_swio)
 
     # select phase:
@@ -2843,7 +3325,7 @@ def value_mjo_significant_map(phase: int, grid: xr.DataArray = 0, month: str = 0
 
 
 def value_significant_of_anomaly_2d_mask(field_3d: xr.DataArray, conf_level: float = 0.05,
-                                         show: bool = True,
+                                         show: bool = False,
                                          fdr_correction: bool = True,
                                          check_nan_every_grid: bool = False) -> xr.DataArray:
     """
@@ -2853,10 +3335,13 @@ def value_significant_of_anomaly_2d_mask(field_3d: xr.DataArray, conf_level: flo
     :return: 2d array of true false xr.DataArray
 
     Args:
-        fdr_correction (): if do a false discoveries rate correction
+        fdr_correction (): if I do a false discoveries rate correction
         check_nan_every_grid (): to check all the pixel, since they could have nan at different times
         show ():
     """
+
+    print(f'significant: in put file size =')
+    print(field_3d.sizes)
 
     # change the order of dims
     transpose_dims = ['y', 'x']
@@ -2892,10 +3377,11 @@ def value_significant_of_anomaly_2d_mask(field_3d: xr.DataArray, conf_level: flo
 
                 # print(sig_2d.shape, lat, lon)
     else:
+        # to make simple and faster:
         # check if the operation of dropna reduce seriously the size of data
         field = field_3d.dropna(sig_coord_name)
-        if len(field) / len(field_3d) < 0.98:
-            sys.exit('too much nan, > 2% in data check significant function')
+        if len(field) / len(field_3d) < 0.90:
+            sys.exit('too much nan, > 10% in data check significant function')
         t_map, p_map = stats.ttest_1samp(field, 0)
 
     if fdr_correction:
@@ -3147,7 +3633,7 @@ def set_active_axis(axs: np.ndarray, n: int):
 
 
 # noinspection PyUnresolvedReferences
-def set_cbar(vmax, vmin, n_cbar, bias):
+def set_cbar(vmax, vmin, n_cbar, bias, cmap: str = 'default'):
     """
     set for color bar
     :param n_cbar:
@@ -3155,19 +3641,25 @@ def set_cbar(vmax, vmin, n_cbar, bias):
     :param vmax:
     :param bias:
     :return: cmap, norm
+
+    Args:
+        cmap: if a specific cmap is requared
     """
     import matplotlib as mpl
 
-    if bias == 1:
-        cmap = plt.cm.coolwarm
-        vmin = max(np.abs(vmin), np.abs(vmax)) * (- 1)
-        vmax = max(np.abs(vmin), np.abs(vmax))
-    if bias == 0:
-        cmap = plt.cm.YlOrRd
+    if cmap == 'default':
+        if bias == 1:
+            cmap = plt.cm.coolwarm
+            vmin = max(np.abs(vmin), np.abs(vmax)) * (- 1)
+            vmax = max(np.abs(vmin), np.abs(vmax))
+        if bias == 0:
+            cmap = plt.cm.YlOrRd
 
-    # using the input of min and max, but make (max-min/2) in the middle
-    if bias == 3:
-        cmap = plt.cm.coolwarm
+        # using the input of min and max, but make (max-min/2) in the middle
+        if bias == 3:
+            cmap = plt.cm.coolwarm
+    else:
+        print(f'use cbar specific')
 
     bounds = np.linspace(vmin, vmax, n_cbar + 1)
     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
@@ -3175,7 +3667,7 @@ def set_cbar(vmax, vmin, n_cbar, bias):
     return cmap, norm
 
 
-def tag_from_str(string: str):
+def value_season_name_from_str(string: str):
     """
     get monthly tag, such as JJA/DJF from string
     :param string: str
@@ -3371,7 +3863,7 @@ def value_str_month_name(months: list):
 
 def filter_df_by_month(data: pd.DataFrame, month: str) -> pd.DataFrame:
     """
-    filtering xr.DataArray by input string of season
+    filtering pd.DataFrame by input string of season
     :param data:
     :param month: such as 'JJA'
     :return:
@@ -3417,7 +3909,7 @@ def filter_by_season_name(data: xr.DataArray, season_name: str):
     """
 
     # get tag such as 'JJA'
-    season_tag = tag_from_str(season_name)
+    season_tag = value_season_name_from_str(season_name)
 
     if isinstance(data, xr.DataArray):
         return_data = data[data.time.dt.season == season_tag]
@@ -3511,7 +4003,7 @@ def reduce_ndim_coord(coord: xr.DataArray, dim_name: str, random: bool = True,
         else:
             diff += 1
             # print('not same: ', i)
-            # print(f'random number is ', check_index)
+            # print(f' random number is ', check_index)
 
     if diff:
         return original_coord
@@ -3682,7 +4174,6 @@ def plot_hourly_boxplot_ds_by(list_da: list, list_var_name: list, by: str = 'Mon
     :return:
     """
 
-    import seaborn
 
     ds = convert_multi_da_to_ds(list_da=list_da, list_var_name=list_var_name)
 
@@ -3748,7 +4239,7 @@ def plot_hourly_boxplot_ds_by(list_da: list, list_var_name: list, by: str = 'Mon
             # var['var'] = [list_var_name[col] for x in range(len(da_slice.values.ravel()))]
             all_var = all_var.append(var)
 
-        seaborn.boxplot(x='Hour', y='target', hue='var', data=all_var, ax=ax, showmeans=True)
+        sns.boxplot(x='Hour', y='target', hue='var', data=all_var, ax=ax, showmeans=True)
         # Seaborn's showmeans=True argument adds a mark for mean values in each box.
         # By default, mean values are marked in green color triangles.
 
@@ -3796,7 +4287,6 @@ def plot_hourly_boxplot_by(df: pd.DataFrame, columns: list, by: str):
     :return:
     """
 
-    import seaborn
 
     if by == 'Month':
         nrow = 7
@@ -3835,7 +4325,7 @@ def plot_hourly_boxplot_by(df: pd.DataFrame, columns: list, by: str):
             var['var'] = [columns[col] for _ in range(len(data_slice))]
             all_var = all_var.append(var)
 
-        seaborn.boxplot(x='Hour', y='target', hue='var', data=all_var, ax=ax, showmeans=True)
+        sns.boxplot(x='Hour', y='target', hue='var', data=all_var, ax=ax, showmeans=True)
 
         ax.set_xlim(5, 20)
         # ax.set_ylim(0, 1.1)
@@ -4314,6 +4804,19 @@ def nc_mergetime(list_file: list, var: str, output_tag: str = 'mergetime', save:
         print(f'saved to {input_dir:s}/{output_name:s}')
 
     return da
+
+
+def ctang_convention():
+    """
+    print out my convention used in the analysis:
+
+    Returns:
+    """
+    print(f'use units for attrs of DataArray... ref: ERA5 reanalysis')
+
+    print(f'try to have name and units for any xr.DataArray')
+
+    return 111
 
 
 def convert_cmip6_ensemble_2_standard_da(
@@ -4814,7 +5317,7 @@ def read_to_standard_da(file_path: str, var: str, timezone_str: str = 'default')
     da = ds[var]
 
     # change the order of dims: necessary
-    # da = convert_da_standard_dims_order(da)
+    da = convert_da_standard_dims_order(da)
 
     new_da = convert_da_to_std_dim_coords_names(da)
 
@@ -5627,6 +6130,51 @@ def value_lon_lat_from_address(location: str = 'saint denis, reunion'):
     return location.longitude, location.latitude
 
 
+def value_humidity_specific_era5_Bolton(surface_pressure: xr.DataArray,
+                                        dew_point_2m_temp: xr.DataArray,
+                                        test: bool = 0):
+    # Compute the Specific Humidity(Bolton 1980):
+    # https://archive.eol.ucar.edu/projects/ceop/dm/documents/refdata_report/eqns.html
+    # e = 6.112 * exp((17.67 * Td) / (Td + 243.5));
+    # q = (0.622 * e) / (p - (0.378 * e));
+    # where:
+    # e = vapor pressure in mb;
+    # Td = dew point in deg C;
+    # p = surface pressure in mb;
+    # q = specific humidity in kg / kg.
+
+    # using ERA5 single level data.
+
+    # check input units:
+
+    if test:
+        # use a slice of data
+        dew_point_2m_temp = dew_point_2m_temp[0:100]
+        surface_pressure = surface_pressure[0:100]
+
+    # change units
+    dew_point_2m_temp = dew_point_2m_temp - 273.5
+    dew_point_2m_temp = dew_point_2m_temp.assign_attrs({'unit': 'C'})
+
+    surface_pressure = surface_pressure / 100
+    surface_pressure = surface_pressure.assign_attrs({'unit': 'mb'})
+
+    # e = 6.112 * exp((17.67 * Td) / (Td + 243.5));
+    e = 6.112 * np.exp((17.67 * dew_point_2m_temp) / (dew_point_2m_temp + 243.5))
+    # q = (0.622 * e) / (p - (0.378 * e));
+    q = (0.622 * e) / (surface_pressure - (0.378 * e))
+
+    q = q.rename('specific_humidity')
+    q = q.assign_attrs({
+        'units': 'kg/kg',
+        'long_name': 'specific humidity',
+        'name': 'specific_humidity',
+        'data': 'era5 single level'
+    })
+
+    return q
+
+
 def value_altitude_from_lonlat_reunion(lon: np.ndarray, lat: np.ndarray,
                                        method: str = 'linear',
                                        show: bool = True):
@@ -5782,7 +6330,7 @@ def value_lonlatbox_from_area(area: str):
         box = [0, 90, -50, 10]
 
     if area == 'reu':
-        box = [55, 56, -21.5, -20.8]
+        box = [55, 56, -21.5, -20.7]
 
     if area == 'bigreu':
         box = [54, 57, -22, -20]
@@ -6232,54 +6780,6 @@ def plot_cordex_ensemble_changes_map(past: xr.DataArray, mid: xr.DataArray, end:
     plt.savefig(f'./plot/{big_title.replace(" ", "_"):s}.png', dpi=200)
     plt.show()
     print(f'done')
-
-
-def check_missing_da(start: str, end: str, freq: str, da: xr.DataArray, plot: bool = True):
-    """
-    to find the missing data number in months and in hours
-    :param start:
-    :param end:
-    :param freq:
-    :param da:
-    :param plot:
-    :return:
-    """
-    total_time_steps = pd.date_range(start, end, freq=freq)
-
-    missing_num = len(total_time_steps) - da.sizes['time']
-    print(f'there are {missing_num:g} missing values..')
-
-    if missing_num:
-        # find the missing values:
-        A = total_time_steps.strftime('%Y-%m-%d %H:%M')
-        B = da.time.dt.strftime('%Y-%m-%d %H:%M')
-        C = [i for i in A if i not in B]
-
-        matrix_mon_hour = np.zeros((12, 24))
-        missing_datetime = pd.to_datetime(C)
-        for i in range(1, 13):
-            monthly = missing_datetime[missing_datetime.month == i]
-            for h in range(0, 24):
-                missing_hours = list(monthly.groupby(monthly.hour).keys())
-
-                if h in missing_hours:
-                    matrix_mon_hour[i - 1, h] = monthly.groupby(monthly.hour)[h].size
-
-    if plot:
-
-        im = plt.imshow(matrix_mon_hour, cmap="OrRd")
-        plt.colorbar(im, orientation='horizontal', shrink=0.8, pad=0.2,
-                     label='num of missing values')
-
-        plt.xlabel('hour')
-        plt.ylabel('month')
-
-        plt.title(f'num of missing data in month and hour @ {freq:s}')
-
-        plt.show()
-
-    return matrix_mon_hour
-
 
 
 # change from Mialhe
