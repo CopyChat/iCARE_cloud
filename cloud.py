@@ -61,15 +61,15 @@ def cloud(cfg: DictConfig) -> None:
 
             for raw_file in list_file:
                 print(raw_file)
-                da = DATA.add_lon_lat_to_raw_nc(raw_nc_file=raw_file, var='ct',
-                                                lon=cfg.file.icare_3km_lon_MSG0415,
-                                                lat=cfg.file.icare_3km_lat_MSG0415,
-                                                save=True)
+                DATA.add_lon_lat_to_raw_nc(raw_nc_file=raw_file, var='ct',
+                                           lon=cfg.file.icare_3km_lon_MSG0415,
+                                           lat=cfg.file.icare_3km_lat_MSG0415,
+                                           save=True)
                 # return da just for test
 
         if cfg.job.data.select_reunion:
             # try to select reunion:
-            reu_box = GEO_PLOT.value_lonlatbox_from_area('reu')
+            # reu_box = GEO_PLOT.value_lonlatbox_from_area('reu')
             # or a smaller domain:
             reu_box = [55.12, 55.9, -21.5, -20.8]
 
@@ -80,8 +80,8 @@ def cloud(cfg: DictConfig) -> None:
 
             for raw_file in list_lonlat_file:
                 print(raw_file)
-                da = DATA.select_area_by_lon_lat_2D_dim(raw_nc_file=raw_file, var='ct',
-                                                        box=reu_box, area='reu', save=True)
+                DATA.select_area_by_lon_lat_2D_dim(raw_nc_file=raw_file, var='ct',
+                                                   box=reu_box, area='reu', save=True)
 
             # after selection the Reunion domain still in general projection.
             # see plots of latitude and longitude in ./plot
@@ -102,23 +102,22 @@ def cloud(cfg: DictConfig) -> None:
                     list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/swio/'
                                                 f'ct.*_2019{month:s}{day:s}T*Z.lonlat.nc')
                     list_file.sort()
-                    da = GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='daily')
+                    GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='daily')
 
                 # for swio (monthly):
                 list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/reu/'
                                             f'ct.*_2019{month:s}??T*Z.lonlat.swio.nc')
                 list_file.sort()
-                da2 = GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='monthly')
+                GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='monthly')
 
-        if cfg.job.data.saf_nwc.mergetime_reu:
-
+        if cfg.job.data.mergetime_reu:
             # for reu (yearly)
             list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/reu/'
                                         f'ct.*_2019????T*Z.lonlat.reu.nc')
             list_file.sort()
-            da2 = GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='year.ly')
+            GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='year.ly')
 
-        if cfg.job.data.saf_nwc.missing_reu:
+        if cfg.job.data.missing_reu:
             # check missing for each year
             freq = '15min'
             start = '2019-01-01 00:00'
@@ -128,12 +127,16 @@ def cloud(cfg: DictConfig) -> None:
             mon_hour_matrix = GEO_PLOT.check_missing_da(
                 start=start, end=end, freq=freq,
                 da=reu_da, plot=True)
+            print(mon_hour_matrix)
 
-        if cfg.job.data.saf_nwc.select_moufia:
+        if cfg.job.data.select_moufia:
             reu = GEO_PLOT.read_to_standard_da(cfg.file.reu_nc, 'ct')
 
-            moufia: xr.DataArray = GEO_PLOT.select_pixel_da(da=reu, lon=-55.5, lat=-21, n_pixel=1)
+            moufia: xr.DataArray = GEO_PLOT.select_pixel_da(da=reu, lon=55.45, lat=-21.0, n_pixel=1)
 
+            moufia.to_netcdf(cfg.file.moufia_nc)
+
+            print(moufia)
     # ==================================================================== data:
     print('done')
 

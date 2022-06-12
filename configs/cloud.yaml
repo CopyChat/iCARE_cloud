@@ -39,6 +39,7 @@ file:
   icare_3km_lat_MSG0415: ./local_data/coords/MSG+0415.3km.lat
   icare_3km_lon_MSG0415: ./local_data/coords/MSG+0415.3km.lon
   reu_nc: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.reu.yearly.nc
+  moufia_nc: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.moufia.yearly.nc
 
 #plot:
 #

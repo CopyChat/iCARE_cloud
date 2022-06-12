@@ -678,6 +678,53 @@ def multi_year_daily_mean(var: xr.DataArray):
     return ydaymean
 
 
+def check_missing_da(start: str, end: str, freq: str, da: xr.DataArray, plot: bool = True):
+    """
+    to find the missing data number in months and in hours
+    :param start:
+    :param end:
+    :param freq:
+    :param da:
+    :param plot:
+    :return:
+    """
+    total_time_steps = pd.date_range(start, end, freq=freq)
+
+    missing_num = len(total_time_steps) - da.sizes['time']
+    print(f'there are {missing_num:g} missing values..')
+
+    if missing_num:
+        # find the missing values:
+        A = total_time_steps.strftime('%Y-%m-%d %H:%M')
+        B = da.time.dt.strftime('%Y-%m-%d %H:%M')
+        C = [i for i in A if i not in B]
+
+        matrix_mon_hour = np.zeros((12, 24))
+        missing_datetime = pd.to_datetime(C)
+        for i in range(1, 13):
+            monthly = missing_datetime[missing_datetime.month == i]
+            for h in range(0, 24):
+                missing_hours = list(monthly.groupby(monthly.hour).keys())
+
+                if h in missing_hours:
+                    matrix_mon_hour[i - 1, h] = monthly.groupby(monthly.hour)[h].size
+
+    if plot:
+
+        im = plt.imshow(matrix_mon_hour, cmap="OrRd")
+        plt.colorbar(im, orientation='horizontal', shrink=0.8, pad=0.2,
+                     label='num of missing values')
+
+        plt.xlabel('hour')
+        plt.ylabel('month')
+
+        plt.title(f'num of missing data in month and hour @ {freq:s}')
+
+        plt.show()
+
+    return matrix_mon_hour
+
+
 def check_nan_inf_da_df(df):
     """
     check if there's nan or inf in the dataframe or dataarray
@@ -1246,15 +1293,51 @@ def select_nearby_cyclone(cyc_df: pd.DataFrame,
     return df
 
 
-def select_pixel_da(da: xr.DataArray, lon, lat, n_pixel: int = 1):
+def select_pixel_da(da: xr.DataArray, lon, lat, n_pixel: int = 1,
+                    plot: bool = True):
     """
     to select pixel from a da
+    :param plot:
     :param da:
     :param lon:
     :param lat:
     :param n_pixel:
     :return:
     """
+
+    # distance
+    dis = (da.lon - lon)**2 + (da.lat - lat)**2
+    index = dis.argmin(dim=['x', 'y'])
+    index_x = index['x']
+    index_y = index['y']
+
+    # Now I can use that index location to get the values at the x/y diminsion
+    point_da = da.sel(x=index_x, y=index_y)
+
+    if plot:
+
+        # plot the nearest 9 points:
+        point_9 = da[0].sel(x=[index_x-1, index_x, index_x + 1],
+                            y=[index_y-1, index_y, index_y + 1])
+
+        print(f' ctang: if there is a error of output of bounds, then check the input location')
+
+        # plot
+        plt.scatter(point_9.lon.values.ravel(), point_9.lat.values.ravel())
+
+        # Plot requested lat/lon point blue
+        plt.scatter(lon, lat, color='b')
+        plt.text(lon, lat, 'requested', color='b')
+
+        # Plot the nearest point in the array red
+        plt.scatter(point_da.lon.values, point_da.lat.values, color='r')
+        plt.text(point_da.lon.values, point_da.lat.values, 'nearest')
+
+        plt.title('nearest point')
+        plt.grid()
+        plt.show()
+
+    return point_da
 
 
 def plot_diurnal_boxplot_in_classif(classif: pd.DataFrame, field: xr.DataArray,
