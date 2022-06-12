@@ -1246,6 +1246,17 @@ def select_nearby_cyclone(cyc_df: pd.DataFrame,
     return df
 
 
+def select_pixel_da(da: xr.DataArray, lon, lat, n_pixel: int = 1):
+    """
+    to select pixel from a da
+    :param da:
+    :param lon:
+    :param lat:
+    :param n_pixel:
+    :return:
+    """
+
+
 def plot_diurnal_boxplot_in_classif(classif: pd.DataFrame, field: xr.DataArray,
                                     suptitle_add_word: str = '',
                                     anomaly: int = 0,
