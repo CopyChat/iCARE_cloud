@@ -15,7 +15,7 @@ job:
     mergetime_swio: 0
     mergetime_reu: 0
     missing_reu: 0
-    select_moufia: 1
+    select_moufia: 0
 
 
 dir:

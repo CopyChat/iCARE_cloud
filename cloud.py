@@ -11,10 +11,15 @@ import glob
 import hydra
 import xarray as xr
 from omegaconf import DictConfig
+from importlib import reload
 
 import DATA
 import GEO_PLOT
 import subprocess
+
+
+def renew():
+    reload(GEO_PLOT)
 
 
 @hydra.main(config_path="configs", config_name="cloud")
@@ -134,10 +139,15 @@ def cloud(cfg: DictConfig) -> None:
 
             moufia: xr.DataArray = GEO_PLOT.select_pixel_da(da=reu, lon=55.45, lat=-21.0, n_pixel=1)
 
-            moufia.to_netcdf(cfg.file.moufia_nc)
+            new_da = xr.DataArray(data=moufia.data, dims=('time',),
+                                  coords={'time': moufia.time}, name='ct')
+            new_da = new_da.assign_attrs({'units': '', 'long_name': 'cloud_type'})
+            new_da.to_netcdf(cfg.file.moufia_nc)
 
-            print(moufia)
-    # ==================================================================== data:
+    # ==================================================================== moufia
+
+    moufia = GEO_PLOT.read_to_standard_da(cfg.file.moufia_nc, 'ct')
+
     print('done')
 
 
