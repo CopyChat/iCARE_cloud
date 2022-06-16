@@ -16,6 +16,8 @@ job:
     mergetime_reu: 0
     missing_reu: 0
     select_moufia: 0
+  moufia:
+    statistics: 1
 
 
 dir:
