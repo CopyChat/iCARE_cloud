@@ -9,9 +9,12 @@ __author__ = "ChaoTANG@univ-reunion.fr"
 import sys
 import glob
 import hydra
+import numpy as np
+import matplotlib.pyplot as plt
 import xarray as xr
 from omegaconf import DictConfig
 from importlib import reload
+import pandas as pd
 
 import DATA
 import GEO_PLOT
@@ -59,17 +62,28 @@ def cloud(cfg: DictConfig) -> None:
 
             # all files to be processed:
             # change the dir in config/cloud.yami if needed
-            list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/raw/ct.*Z.nc')
+            list_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/raw/ct.*Z.nc')
 
             # resort by DateTime in the name file
             list_file.sort()
 
+            # -------------------- test local MacBook ------------------------
+            # read a list_file to test locally:
+            # use the ct_conditions file for local test, since it has the land-sea diff.
+            # raw_nc_file = f'./local_data/icare_dir_ccur/ct_conditions.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.nc'
+            # list_file: list = sorted(glob.glob(f'{cfg.dir.icare_data_local:}/ct_conditions.*Z.nc'))
+            list_file: list = sorted(glob.glob(f'{cfg.dir.icare_data_local:}/ct.*Z.nc'))
+            # -------------------- test local MacBook ------------------------
+
             for raw_file in list_file:
                 print(raw_file)
-                DATA.add_lon_lat_to_raw_nc(raw_nc_file=raw_file, var='ct',
-                                           lon=cfg.file.icare_3km_lon_MSG0415,
-                                           lat=cfg.file.icare_3km_lat_MSG0415,
-                                           save=True)
+                DATA.add_lon_lat_to_raw_nc(
+                    raw_nc_file=raw_file,
+                    var='ct',
+                    lon_file=cfg.file.icare_3km_lon_MSG0415,
+                    lat_file=cfg.file.icare_3km_lat_MSG0415,
+                    save=True
+                )
                 # return da just for test
 
         if cfg.job.data.select_reunion:
@@ -144,11 +158,73 @@ def cloud(cfg: DictConfig) -> None:
             new_da = new_da.assign_attrs({'units': '', 'long_name': 'cloud_type'})
             new_da.to_netcdf(cfg.file.moufia_nc)
 
+            df_utc = new_da.to_dataframe()
+            df_local = GEO_PLOT.convert_df_shifttime(df_utc, 3600 * 4)
+            df_local.to_pickle(cfg.file.moufia_local_time)
+
     # ==================================================================== moufia
 
-    moufia = GEO_PLOT.read_to_standard_da(cfg.file.moufia_nc, 'ct')
+    if any(GEO_PLOT.get_values_multilevel_dict(dict(cfg.job.moufia))):
+        # moufia in local time:
+        moufia = pd.read_pickle(cfg.file.moufia_local_time)
 
-    print('done')
+        if cfg.job.moufia.regroup:
+            # regroup the cloud types:
+
+            # remove the #2 cloud-free sea:
+            da1 = moufia[moufia > 2].dropna()
+
+            # make #11-15 to #11 as high semitransparent cloud
+
+            da1[da1 >= 11] = 11
+
+            # only: #5 very-low, #6 low, #7 Mid-level #8 High Opaque,
+            # #9 Very-high opaque, #10 fractional #11 high semitransparent cloud
+
+            da1.to_pickle(cfg.file.moufia_regroup)
+
+        if any(GEO_PLOT.get_values_multilevel_dict(dict(cfg.job.moufia.statistics))):
+            df = moufia
+            df = pd.read_pickle(cfg.file.moufia_regroup)
+
+            if cfg.job.moufia.statistics.monthly:
+                month_count = []
+                class_names = np.int8(list(set(df.values.ravel())))
+                for y in [2019, ]:
+                    year_1 = df[df.index.year == y]
+                    for i in range(12):
+                        month = i + 1
+                        month_1 = year_1[year_1.index.month == month]
+                        for ct in class_names:
+                            ct_1 = month_1[month_1.ct == ct]
+                            count = len(ct_1)
+                            data = [y, month, ct, count]
+                            month_count.append(data)
+
+                df_count = pd.DataFrame(data=month_count,
+                                        columns=['year', 'month', 'ct', 'N'])
+
+                # another method:
+                df19 = df[df.index.year == 2019]
+                # monthly:
+                df19_count = df19.groupby([df19.index.month, 'ct']).size().unstack()
+
+                df19_count.plot(kind='bar', stacked=False)
+                df19_count.plot(kind='bar', stacked=True, legend=True)
+                plt.xlabel('month (2019)')
+                plt.ylabel('occurrence')
+                plt.xlim(-1, 14)
+                plt.savefig(cfg.file.ct_monthly_occurrence_plot, dpi=300)
+                plt.show()
+
+                # hourly:
+                df19_count = df19.groupby([df19.index.hour, 'ct']).size().unstack()
+                df19_count.plot(kind='bar', stacked=True, legend=True)
+                plt.xlabel('Hour (2019)')
+                plt.ylabel('occurrence')
+                plt.xlim(-1, 30)
+                plt.savefig(cfg.file.ct_hourly_occurrence_plot, dpi=300)
+                plt.show()
 
 
 if __name__ == "__main__":

@@ -10,14 +10,17 @@ job:
   data:
     add_coords_to_raw:
       prepare_data_ccur: 0
-      add_coords_to_raw_nc: 0
+      add_coords_to_raw_nc: 1
     select_reunion: 0
     mergetime_swio: 0
     mergetime_reu: 0
     missing_reu: 0
     select_moufia: 0
   moufia:
-    statistics: 1
+    regroup: 0
+    statistics:
+      monthly: 1
+      hourly: 1
 
 
 dir:
@@ -25,10 +28,8 @@ dir:
   data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/dataset
   local_data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data
   plot: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/plot
-#  icare_data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/icare_dir_ccur
-  icare_data: /gpfs/scratch/le2p/OBS_DATA/icare/ctang/2019/ct
-
-
+  icare_data_local: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/icare_dir_ccur
+  icare_data_ccur: /gpfs/scratch/le2p/OBS_DATA/icare/ctang/2019/ct
 
 
 param:
@@ -43,6 +44,11 @@ file:
   reu_nc: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.reu.yearly.nc
   moufia_nc: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.moufia.yearly.nc
 
+  moufia_local_time: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.moufia.yearly.local_time
+  moufia_regroup: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.moufia.yearly.local_time.regroup
+
+  ct_monthly_occurrence_plot: ./plot/ct_monthly_occurrence_2019.png
+  ct_hourly_occurrence_plot: ./plot/ct_hourly_occurrence_2019.png
 #plot:
 #
 #output:

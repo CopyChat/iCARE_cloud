@@ -1312,6 +1312,9 @@ def select_pixel_da(da: xr.DataArray, lon, lat, n_pixel: int = 1,
     index_x = index['x']
     index_y = index['y']
 
+    print(f'---- index x and y')
+    print(index_x, index_y)
+
     # Now I can use that index location to get the values at the x/y diminsion
     point_da = da.sel(x=index_x, y=index_y)
 

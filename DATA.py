@@ -37,24 +37,24 @@ def get_date():
     return dates
 
 
-def add_lon_lat_to_raw_nc(raw_nc_file: str, lon, lat, var: str, save: bool = True):
+def add_lon_lat_to_raw_nc(raw_nc_file: str, lon_file, lat_file, var: str, save: bool = True):
     """
     since the data is without any coords, with only dim numbers. this function adds the coords
      to the raw nc file, even if it may not be in a regular projection.
     :param save:
     :param var:
-    :param lat:
+    :param lat_file:
     :param raw_nc_file:
     :type raw_nc_file:
-    :param lon:
+    :param lon_file:
     :return:
     :rtype: xr.DataArray
     """
     # reading HDF lonlat data:
-    lon_1D = GEO_PLOT.read_binary_file(lon)
+    lon_1D = GEO_PLOT.read_binary_file(lon_file)
     lon = lon_1D.reshape((int(np.sqrt(lon_1D.shape[0])), -1))
 
-    lat_1D = GEO_PLOT.read_binary_file(lat)
+    lat_1D = GEO_PLOT.read_binary_file(lat_file)
     lat = lat_1D.reshape((int(np.sqrt(lat_1D.shape[0])), -1))
 
     # read raw data into xr.Dataset first, since icare has multiple variables.
@@ -104,22 +104,25 @@ def add_lon_lat_to_raw_nc(raw_nc_file: str, lon, lat, var: str, save: bool = Tru
     local_lon = func_lon(local_nx, local_ny)
     local_lat = func_lat(local_nx, local_ny)
 
+    local_lat = local_lat[::-1, :]
+    local_lon = local_lon[::-1, :]
+
     # do some test to understand the projection:
     test = 0
     if test:
 
-        lon[lon == -999] = np.nan
-        lat[lat == -999] = np.nan
+        lon_file[lon_file == -999] = np.nan
+        lat_file[lat_file == -999] = np.nan
 
-        for i in range(lon.shape[0]):
+        for i in range(lon_file.shape[0]):
             print(i)
-            lat1 = lat[:, i]
-            lon1 = lon[i, :]
+            lat1 = lat_file[:, i]
+            lon1 = lon_file[i, :]
 
             plt.plot(lon1, lat1)
 
-        plt.ylim([np.nanmin(lat), np.nanmax(lat)])
-        plt.xlim([np.nanmin(lon), np.nanmax(lon)])
+        plt.ylim([np.nanmin(lat_file), np.nanmax(lat_file)])
+        plt.xlim([np.nanmin(lon_file), np.nanmax(lon_file)])
 
         plt.xlabel('lon')
         plt.ylabel('lat')
