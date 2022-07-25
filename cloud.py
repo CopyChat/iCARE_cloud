@@ -51,48 +51,56 @@ def cloud(cfg: DictConfig) -> None:
             print(f'deal with SAF_NWC data ...')
             print(f'this code should be run in CCuR')
 
-            # get data ready for processing
-            # to select a single variable
-            subprocess.call(["./src/Data.sh"], shell=False)
-            # attention: if module do not work, just run the code directly on CCuR.
+            if cfg.job.data.add_coords_to_raw.prepare_data_ccur:
 
-            # add_coords_to_raw_nc:
-            # this piece of code could be used to add coords information to the downloaded
-            # non-coordinated raw netCDF files.
+                # get data ready for processing
+                # to select a single variable
+                subprocess.call(["./src/Data.sh"], shell=False)
+                # attention: if module do not work, just run the code directly on CCuR.
 
-            # all files to be processed:
-            # change the dir in config/cloud.yami if needed
-            list_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/raw/ct.*Z.nc')
+            if cfg.job.data.add_coords_to_raw.add_coords_to_raw_nc:
+                # add_coords_to_raw_nc:
+                # this piece of code could be used to add coords information to the downloaded
+                # non-coordinated raw netCDF files.
 
-            # resort by DateTime in the name file
-            list_file.sort()
+                # all files to be processed:
+                # change the dir in config/cloud.yami if needed
+                list_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/raw/ct.*Z.nc')
 
-            # -------------------- test local MacBook ------------------------
-            # read a list_file to test locally:
-            # use the ct_conditions file for local test, since it has the land-sea diff.
-            # raw_nc_file = f'./local_data/icare_dir_ccur/ct_conditions.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.nc'
-            # list_file: list = sorted(glob.glob(f'{cfg.dir.icare_data_local:}/ct_conditions.*Z.nc'))
-            list_file: list = sorted(glob.glob(f'{cfg.dir.icare_data_local:}/ct.*Z.nc'))
-            # -------------------- test local MacBook ------------------------
+                # resort by DateTime in the name file
+                list_file.sort()
 
-            for raw_file in list_file:
-                print(raw_file)
-                DATA.add_lon_lat_to_raw_nc(
-                    raw_nc_file=raw_file,
-                    var='ct',
-                    lon_file=cfg.file.icare_3km_lon_MSG0415,
-                    lat_file=cfg.file.icare_3km_lat_MSG0415,
-                    save=True
-                )
-                # return da just for test
+                # -------------------- test local MacBook ------------------------
+
+                # when develop or debug:
+                # use the ct_conditions file for local test, since it has the land-sea diff.
+                # list_file: list = sorted(glob.glob(f'{cfg.dir.icare_data_local:}/ct_conditions.*Z.nc'))
+                # raw_nc_file = f'./local_data/icare_dir_ccur/ct_conditions.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.nc'
+
+                # when testing code with multi files locally:
+                # read a list_file to test locally:
+                # list_file: list = sorted(glob.glob(f'{cfg.dir.icare_data_local:}/ct.*Z.nc'))
+
+                # -------------------- test local MacBook ------------------------
+
+                for raw_file in list_file:
+                    print(raw_file)
+                    DATA.add_lon_lat_to_raw_nc(
+                        raw_nc_file=raw_file,
+                        var='ct',
+                        lon_file=cfg.file.icare_3km_lon_MSG0415,
+                        lat_file=cfg.file.icare_3km_lat_MSG0415,
+                        save=True
+                    )
+                    # return da just for test
 
         if cfg.job.data.select_reunion:
             # try to select reunion:
             # reu_box = GEO_PLOT.value_lonlatbox_from_area('reu')
             # or a smaller domain:
-            reu_box = [55.12, 55.9, -21.5, -20.8]
+            reu_box = [55.05, 56, -21.55, -20.7]
 
-            list_lonlat_file: list = glob.glob(f'{cfg.dir.icare_data:s}/ct.*Z.lonlat.nc')
+            list_lonlat_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/raw/ct.*Z.lonlat.nc')
 
             # resort by DateTime in the name file
             list_lonlat_file.sort()
@@ -118,20 +126,20 @@ def cloud(cfg: DictConfig) -> None:
                 for d in range(1, 32):
                     day = str(d).zfill(2)
                     print(f'merge in month {month:s}, day {day:s}...')
-                    list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/swio/'
+                    list_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/swio/'
                                                 f'ct.*_2019{month:s}{day:s}T*Z.lonlat.nc')
                     list_file.sort()
                     GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='daily')
 
                 # for swio (monthly):
-                list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/reu/'
+                list_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/reu/'
                                             f'ct.*_2019{month:s}??T*Z.lonlat.swio.nc')
                 list_file.sort()
                 GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='monthly')
 
         if cfg.job.data.mergetime_reu:
             # for reu (yearly)
-            list_file: list = glob.glob(f'{cfg.dir.icare_data:s}/reu/'
+            list_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/reu/'
                                         f'ct.*_2019????T*Z.lonlat.reu.nc')
             list_file.sort()
             GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='year.ly')

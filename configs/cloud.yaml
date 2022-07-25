@@ -10,17 +10,17 @@ job:
   data:
     add_coords_to_raw:
       prepare_data_ccur: 0
-      add_coords_to_raw_nc: 1
+      add_coords_to_raw_nc: 0
     select_reunion: 0
     mergetime_swio: 0
-    mergetime_reu: 0
+    mergetime_reu: 1
     missing_reu: 0
     select_moufia: 0
   moufia:
     regroup: 0
     statistics:
-      monthly: 1
-      hourly: 1
+      monthly: 0
+      hourly: 0
 
 
 dir:
@@ -30,7 +30,6 @@ dir:
   plot: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/plot
   icare_data_local: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/icare_dir_ccur
   icare_data_ccur: /gpfs/scratch/le2p/OBS_DATA/icare/ctang/2019/ct
-
 
 param:
   plot_big_data_test: 1
