@@ -744,12 +744,26 @@ def check_nan_inf_da_df(df):
 
     for i in range(len(column_names)):
         num_nan = df[column_names[i]].isna().values.sum()
+        index_nan = np.where(df[column_names[i]].isna().values)[0]
         num_inf = np.isinf(df[column_names[i]]).values.sum()
+        index_inf = np.where(np.isinf(df[column_names[i]].isna()).values)[0]
 
         print(f'{column_names[i]:s} \t has {num_nan:g} NaN, '
               f'which is only {num_nan * 100 / df.shape[0]: 4.2f} %. Not Much. \t'
               f'| {column_names[i]:s} \t has {num_inf:g} INF, '
               f'which is only {num_inf * 100 / df.shape[0]: 4.2f} %. Not Much')
+
+        if len(index_nan):
+            print(f'------------- nan ------------')
+            for j in range(len(index_nan)):
+                index = index_nan[j]
+                print(f'index = {index:g}', df.iloc[index])
+
+        if len(index_inf):
+            print(f'------------- inf ------------')
+            for j in range(len(index_nan)):
+                index = index_inf[j]
+                print(f'index = {index:g}', df.iloc[index])
 
 
 def plot_violin_df_1D(df: pd.DataFrame, x: str, y: str, y_unit: str = '',
