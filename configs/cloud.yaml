@@ -13,14 +13,14 @@ job:
       add_coords_to_raw_nc: 0
     select_reunion: 0
     mergetime_swio: 0
-    mergetime_reu: 1
+    mergetime_reu: 0
     missing_reu: 0
     select_moufia: 0
   moufia:
-    regroup: 0
+    regroup: 1
     statistics:
-      monthly: 0
-      hourly: 0
+      monthly: 1
+      hourly: 1
 
 
 dir:

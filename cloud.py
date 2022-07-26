@@ -52,7 +52,6 @@ def cloud(cfg: DictConfig) -> None:
             print(f'this code should be run in CCuR')
 
             if cfg.job.data.add_coords_to_raw.prepare_data_ccur:
-
                 # get data ready for processing
                 # to select a single variable
                 subprocess.call(["./src/Data.sh"], shell=False)
@@ -145,11 +144,21 @@ def cloud(cfg: DictConfig) -> None:
             GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='year.ly')
 
         if cfg.job.data.missing_reu:
+
+            reu_da = GEO_PLOT.read_to_standard_da(cfg.file.reu_nc, 'ct')
+
+            # remove maps with only nan values
+            reu_da_nan_maps = reu_da.where(np.isnan(reu_da).all(dim={'x', 'y'}), drop=True)
+            if len(reu_da_nan_maps):
+                print(f'{len(reu_da_nan_maps):g} maps are found with only nan @:', reu_da_nan_maps.time.values)
+                reu_da = reu_da.where(np.invert(np.isnan(reu_da).all(dim={'x', 'y'})), drop=True)
+                # save it:
+                reu_da.to_netcdf(cfg.file.reu_nc)
+
             # check missing for each year
             freq = '15min'
             start = '2019-01-01 00:00'
             end = '2019-12-31 23:45'
-            reu_da = GEO_PLOT.read_to_standard_da(cfg.file.reu_nc, 'ct')
 
             mon_hour_matrix = GEO_PLOT.check_missing_da(
                 start=start, end=end, freq=freq,
@@ -164,7 +173,7 @@ def cloud(cfg: DictConfig) -> None:
             new_da = xr.DataArray(data=moufia.data, dims=('time',),
                                   coords={'time': moufia.time}, name='ct')
             new_da = new_da.assign_attrs({'units': '', 'long_name': 'cloud_type'})
-            new_da.to_netcdf(cfg.file.moufia_nc)
+            new_da.to_netcdf(cfg.file.moufia_nc)  # UTC not local time
 
             df_utc = new_da.to_dataframe()
             df_local = GEO_PLOT.convert_df_shifttime(df_utc, 3600 * 4)
@@ -180,13 +189,17 @@ def cloud(cfg: DictConfig) -> None:
             # regroup the cloud types:
 
             # remove the #2 cloud-free sea:
-            da1 = moufia[moufia > 2].dropna()
+            da1 = moufia[moufia != 2].dropna()
+            print(f'cloud free sea = {len(moufia[moufia == 2].dropna()):g} days')
+            print(f'snow over land = {len(moufia[moufia == 3].dropna()):g} days')
+
+            # remove snow over land, since wrong detections, since moufia nearly never has snow.
+            da1 = da1[da1 != 3].dropna()
 
             # make #11-15 to #11 as high semitransparent cloud
-
             da1[da1 >= 11] = 11
 
-            # only: #5 very-low, #6 low, #7 Mid-level #8 High Opaque,
+            # only: #1 clearsky, #5 very-low, #6 low, #7 Mid-level #8 High Opaque,
             # #9 Very-high opaque, #10 fractional #11 high semitransparent cloud
 
             da1.to_pickle(cfg.file.moufia_regroup)
