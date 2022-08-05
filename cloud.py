@@ -209,23 +209,7 @@ def cloud(cfg: DictConfig) -> None:
             df = pd.read_pickle(cfg.file.moufia_regroup)
 
             if cfg.job.moufia.statistics.monthly:
-                month_count = []
-                class_names = np.int8(list(set(df.values.ravel())))
-                for y in [2019, ]:
-                    year_1 = df[df.index.year == y]
-                    for i in range(12):
-                        month = i + 1
-                        month_1 = year_1[year_1.index.month == month]
-                        for ct in class_names:
-                            ct_1 = month_1[month_1.ct == ct]
-                            count = len(ct_1)
-                            data = [y, month, ct, count]
-                            month_count.append(data)
 
-                df_count = pd.DataFrame(data=month_count,
-                                        columns=['year', 'month', 'ct', 'N'])
-
-                # another method:
                 df19 = df[df.index.year == 2019]
                 # monthly:
                 df19_count = df19.groupby([df19.index.month, 'ct']).size().unstack()
@@ -238,6 +222,7 @@ def cloud(cfg: DictConfig) -> None:
                 plt.savefig(cfg.file.ct_monthly_occurrence_plot, dpi=300)
                 plt.show()
 
+            if cfg.job.moufia.statistics.hourly:
                 # hourly:
                 df19_count = df19.groupby([df19.index.hour, 'ct']).size().unstack()
                 df19_count.plot(kind='bar', stacked=True, legend=True)
@@ -246,6 +231,7 @@ def cloud(cfg: DictConfig) -> None:
                 plt.xlim(-1, 30)
                 plt.savefig(cfg.file.ct_hourly_occurrence_plot, dpi=300)
                 plt.show()
+
 
 
 if __name__ == "__main__":
