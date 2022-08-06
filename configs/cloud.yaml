@@ -17,10 +17,11 @@ job:
     missing_reu: 0
     select_moufia: 0
   moufia:
-    regroup: 1
+    regroup: 0
+    reallocation: 1
     statistics:
-      monthly: 1
-      hourly: 1
+      monthly: 0
+      hourly: 0
 
 
 dir:
@@ -41,6 +42,7 @@ file:
   icare_3km_lat_MSG0415: ./local_data/coords/MSG+0415.3km.lat
   icare_3km_lon_MSG0415: ./local_data/coords/MSG+0415.3km.lon
   reu_nc: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.reu.yearly.nc
+  reu_local_time_nc: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.reu.yearly.local_time.nc
   moufia_nc: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.moufia.yearly.nc
 
   moufia_local_time: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.moufia.yearly.local_time
