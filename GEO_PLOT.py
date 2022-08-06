@@ -1330,32 +1330,36 @@ def select_pixel_da(da: xr.DataArray, lon, lat, n_pixel: int = 1,
     print(index_x, index_y)
 
     # Now I can use that index location to get the values at the x/y diminsion
-    point_da = da.sel(x=index_x, y=index_y)
+    point_1 = da.sel(x=index_x, y=index_y)
+    point_9 = da.sel(x=[index_x-1, index_x, index_x + 1],
+                     y=[index_y-1, index_y, index_y + 1])
 
     if plot:
 
         # plot the nearest 9 points:
-        point_9 = da[0].sel(x=[index_x-1, index_x, index_x + 1],
-                            y=[index_y-1, index_y, index_y + 1])
+        point_9p = point_9[0]
 
         print(f' ctang: if there is a error of output of bounds, then check the input location')
 
         # plot
-        plt.scatter(point_9.lon.values.ravel(), point_9.lat.values.ravel())
+        plt.scatter(point_9p.lon.values.ravel(), point_9p.lat.values.ravel())
 
         # Plot requested lat/lon point blue
         plt.scatter(lon, lat, color='b')
         plt.text(lon, lat, 'requested', color='b')
 
         # Plot the nearest point in the array red
-        plt.scatter(point_da.lon.values, point_da.lat.values, color='r')
-        plt.text(point_da.lon.values, point_da.lat.values, 'nearest')
+        plt.scatter(point_1.lon.values, point_1.lat.values, color='r')
+        plt.text(point_1.lon.values, point_1.lat.values, 'nearest')
 
         plt.title('nearest point')
         plt.grid()
         plt.show()
 
-    return point_da
+    if n_pixel == 1:
+        return point_1
+    if n_pixel == 9:
+        return point_9
 
 
 def plot_diurnal_boxplot_in_classif(classif: pd.DataFrame, field: xr.DataArray,
@@ -5943,9 +5947,19 @@ def convert_da_shifttime(da: xr.DataArray, second: int):
     #         new_coords[c] = coords[c]
 
     # do not change the input dims and coords:
-    new_da = xr.DataArray(da.values, dims=da.dims, name=da.name, attrs=da.attrs)
-    new_da = new_da.assign_coords(time=("time", time_shifted),
-                                  lat=("y", da.lat.data), lon=("x", da.lon.data))
+
+    if da.coords['lat'].ndim == 1:
+        new_da = xr.DataArray(da.values, dims=da.dims, name=da.name, attrs=da.attrs)
+        new_da = new_da.assign_coords(time=("time", time_shifted),
+                                      lat=("y", da.lat.data), lon=("x", da.lon.data))
+
+    if da.coords['lat'].ndim == 2:
+        new_da = xr.DataArray(da.values,
+                              dims=da.dims, name=da.name, attrs=da.attrs,
+                              coords={
+                                  "time": time_shifted,
+                                  "lat": (['y', 'x'], da['lat'].data),
+                                  "lon": (['y', 'x'], da['lon'].data)})
 
     return new_da
 
