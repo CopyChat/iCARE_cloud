@@ -147,6 +147,11 @@ def cloud(cfg: DictConfig) -> None:
 
             reu_da = GEO_PLOT.read_to_standard_da(cfg.file.reu_nc, 'ct')
 
+            # save local time file:
+            reu_da_local_time = GEO_PLOT.convert_da_shifttime(da=reu_da, second=3600 * 4)
+            reu_da_local_time.to_netcdf(cfg.file.reu_local_time_nc)
+
+
             # remove maps with only nan values
             reu_da_nan_maps = reu_da.where(np.isnan(reu_da).all(dim={'x', 'y'}), drop=True)
             if len(reu_da_nan_maps):
@@ -164,6 +169,9 @@ def cloud(cfg: DictConfig) -> None:
                 start=start, end=end, freq=freq,
                 da=reu_da, plot=True)
             print(mon_hour_matrix)
+
+
+
 
         if cfg.job.data.select_moufia:
             reu = GEO_PLOT.read_to_standard_da(cfg.file.reu_nc, 'ct')
@@ -204,6 +212,56 @@ def cloud(cfg: DictConfig) -> None:
 
             da1.to_pickle(cfg.file.moufia_regroup)
 
+        if cfg.job.moufia.reallocation:
+            #  Reallocated pixels covered by fractional clouds, i.e., sub-pixel water clouds.
+            #  These pixels were reprocessed and reallocated so that they fall into the cloud type
+            #  most frequently observed among the 8 neighbouring pixels.
+            reu = GEO_PLOT.read_to_standard_da(cfg.file.reu_nc, 'ct')
+            moufia = pd.read_pickle(cfg.file.moufia_local_time)
+
+            # select the neighbour 8 pixels:
+            moufia_9p = GEO_PLOT.select_pixel_da(da=reu, lon=55.45, lat=-21.0, n_pixel=9)
+
+            moufia_9p_df = moufia_9p.to_dataframe()
+
+            # see the spatial concurrency: monthly
+            moufia_9p_count = moufia_9p_df.groupby([moufia_9p_df.index.get_level_values(0).month, 'ct']).size().unstack()
+
+            moufia_9p_count.plot(kind='bar', stacked=False)
+            moufia_9p_count.plot(kind='bar', stacked=True, legend=True)
+            plt.xlabel('month (2019)')
+            plt.ylabel('occurrence')
+            plt.xlim(-1, 14)
+            plt.title(f'ct in 2019, 15 min')
+            plt.savefig(f'./plot/monthly 9 pixel of moufia.png', dpi=300)
+            plt.show()
+
+            # hourly:
+            moufia_9p_count = moufia_9p_df.groupby([moufia_9p_df.index.get_level_values(0).hour, 'ct']).size().unstack()
+
+            moufia_9p_count.plot(kind='bar', stacked=True, legend=True)
+            plt.xlabel('Hour (2019)')
+            plt.ylabel('occurrence')
+            plt.xlim(-1, 30)
+            plt.title(f'ct in 2019, 15 min')
+            plt.savefig(f'./plot/hourly 9 pixel of moufia.png', dpi=300)
+            plt.show()
+
+            # relocation:
+            count = pd.DataFrame(moufia.value_counts()).sort_index()
+            print(f'{count.loc[[10.0]].values.ravel()[0]:g} timesteps with fraction cloud')
+
+            a = GEO_PLOT.get_data_in_classif(da=moufia_9p, df=moufia)
+
+            fraction_cloud = a.where(a['class'] == 10, drop=True).squeeze()
+
+            for i in range(len(moufia)):
+                if moufia.iloc[i]['ct'] == 10:
+                    print(f'found:', moufia.index[i])
+
+                    dominate = moufia_9p[i, :, :]
+
+
         if any(GEO_PLOT.get_values_multilevel_dict(dict(cfg.job.moufia.statistics))):
             df = moufia
             df = pd.read_pickle(cfg.file.moufia_regroup)
@@ -231,7 +289,6 @@ def cloud(cfg: DictConfig) -> None:
                 plt.xlim(-1, 30)
                 plt.savefig(cfg.file.ct_hourly_occurrence_plot, dpi=300)
                 plt.show()
-
 
 
 if __name__ == "__main__":
