@@ -19,6 +19,7 @@ import pandas as pd
 import DATA
 import GEO_PLOT
 import subprocess
+import Project_cloud
 
 
 def renew():
@@ -142,15 +143,11 @@ def cloud(cfg: DictConfig) -> None:
                                         f'ct.*_2019????T*Z.lonlat.reu.nc')
             list_file.sort()
             GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='year.ly')
+            # this file is saved on CCuR as: ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.reu.yearly.nc
 
         if cfg.job.data.missing_reu:
-
+            # read nc in UTC00
             reu_da = GEO_PLOT.read_to_standard_da(cfg.file.reu_nc, 'ct')
-
-            # save local time file:
-            reu_da_local_time = GEO_PLOT.convert_da_shifttime(da=reu_da, second=3600 * 4)
-            reu_da_local_time.to_netcdf(cfg.file.reu_local_time_nc)
-
 
             # remove maps with only nan values
             reu_da_nan_maps = reu_da.where(np.isnan(reu_da).all(dim={'x', 'y'}), drop=True)
@@ -159,6 +156,11 @@ def cloud(cfg: DictConfig) -> None:
                 reu_da = reu_da.where(np.invert(np.isnan(reu_da).all(dim={'x', 'y'})), drop=True)
                 # save it:
                 reu_da.to_netcdf(cfg.file.reu_nc)
+
+            # save local time file:
+            reu_da = GEO_PLOT.read_to_standard_da(cfg.file.reu_nc, 'ct')
+            reu_da_local_time = GEO_PLOT.convert_da_shifttime(da=reu_da, second=3600 * 4)
+            reu_da_local_time.to_netcdf(cfg.file.reu_local_time_nc)
 
             # check missing for each year
             freq = '15min'
@@ -170,16 +172,14 @@ def cloud(cfg: DictConfig) -> None:
                 da=reu_da, plot=True)
             print(mon_hour_matrix)
 
-
-
-
         if cfg.job.data.select_moufia:
+            # read utc reu nc:
             reu = GEO_PLOT.read_to_standard_da(cfg.file.reu_nc, 'ct')
 
-            moufia: xr.DataArray = GEO_PLOT.select_pixel_da(da=reu, lon=55.45, lat=-21.0, n_pixel=1)
+            moufia_raw: xr.DataArray = GEO_PLOT.select_pixel_da(da=reu, lon=55.45, lat=-21.0, n_pixel=1)
 
-            new_da = xr.DataArray(data=moufia.data, dims=('time',),
-                                  coords={'time': moufia.time}, name='ct')
+            new_da = xr.DataArray(data=moufia_raw.data, dims=('time',),
+                                  coords={'time': moufia_raw.time}, name='ct')
             new_da = new_da.assign_attrs({'units': '', 'long_name': 'cloud_type'})
             new_da.to_netcdf(cfg.file.moufia_nc)  # UTC not local time
 
@@ -190,16 +190,106 @@ def cloud(cfg: DictConfig) -> None:
     # ==================================================================== moufia
 
     if any(GEO_PLOT.get_values_multilevel_dict(dict(cfg.job.moufia))):
-        # moufia in local time:
-        moufia = pd.read_pickle(cfg.file.moufia_local_time)
+
+        if cfg.job.moufia.reallocation:
+            #  Reallocated pixels covered by fractional clouds, i.e., sub-pixel water clouds.
+            #  These pixels were reprocessed and reallocated so that they fall into the cloud type
+            #  most frequently observed among the 8 neighbouring pixels.
+
+            # ----------------------------------------- data
+
+            # local time data:
+            moufia_raw = pd.read_pickle(cfg.file.moufia_local_time)
+
+            reu = GEO_PLOT.read_to_standard_da(cfg.file.reu_local_time_nc, 'ct')
+
+            # select moufia with the neighbour 8 pixels:
+            moufia_9p = GEO_PLOT.select_pixel_da(da=reu, lon=55.45, lat=-21.0, n_pixel=9)
+
+            # ----------------------------------------- statistics
+            # reallocation:
+            count = pd.DataFrame(moufia_raw.value_counts()).sort_index()
+            print(f'{count.loc[[10.0]].values.ravel()[0]:g} time steps with fraction cloud in Moufia pixel')
+            # tag: selecting groupby index DataFrame
+
+            # 9 pixels with central one == 10:
+            frac_cld_9p = moufia_9p.sel(time=moufia_raw[moufia_raw == 10].dropna().index)
+            # tag: selecting DataArray by index from DataFrame: fraction cloud at Moufia
+
+            # make the center moufia pixel nan:
+            frac_cld_9p[:, 1, 1] = np.nan
+
+            # remove all fraction cloud pixels, ct==10, from the 8 neighbours
+            frac_cld_9p_no10 = frac_cld_9p.where(frac_cld_9p != 10)
+
+            # ------------------------------------------ plot:
+            frac_cld_df = frac_cld_9p.to_dataframe()
+
+            # see the spatial concurrency: monthly
+            Project_cloud.plot_monthly_hourly_bar_unstack(df=frac_cld_df,
+                                                          title=f'ct in 2019, 8 moufia nearby pixels, '
+                                                                f'when center = 10, @15min',
+                                                          output_tag=f'8 pixels around moufia')
+
+            # ------------------------------------------ do the reallocation
+
+            # make a loop
+            reallocated = []     # reallocated moufia pixel CT:
+            all_9p_frac_cloud = []   # index where all pixels are 10
+
+            # use data before regroup
+            moufia_reallocated = moufia_raw.copy()     # initialize
+            for i in range(len(frac_cld_9p_no10)):
+                # just for save and check
+                if np.isnan(frac_cld_9p_no10[i, 1, 1]):
+                    data = frac_cld_9p_no10[i].data.ravel()
+                    # int, and remove nan
+                    data_na = np.int32(data[~np.isnan(data)])
+
+                    # if all pixels are fraction cloud:
+                    if len(data_na) == 0:
+                        all_9p_frac_cloud.append(i)
+                        # use the value 1 timestep before:
+                        reallocated.append(reallocated[-1])
+                    else:
+                        dominate = np.bincount(data_na)
+                        reallocated.append(dominate.argmax())
+                        # print(i, len(data_na), data_na, dominate)
+
+                # write reallocated value to moufia:
+                moufia_reallocated.loc[frac_cld_9p_no10[i].time.values] = reallocated[i]
+
+            reallocated_df = moufia_reallocated.loc[frac_cld_9p_no10.time.values]
+
+            print(moufia_raw[moufia_raw==10].dropna().size, 1)
+            Project_cloud.plot_monthly_hourly_bar_unstack(df=reallocated_df,
+                                                          title=f'after reallocation fractional cloud day only',
+                                                          output_tag=f'after_reallocation_moufia')
+
+            Project_cloud.plot_monthly_hourly_bar_unstack(df=moufia_raw[moufia_raw == 10].dropna(),
+                                                          title=f'before reallocation fractional cloud day only',
+                                                          output_tag=f'before_reallocation_moufia')
+
+            # save:
+            moufia_reallocated.to_pickle(cfg.file.moufia_reallocation)
+
+            Project_cloud.plot_monthly_hourly_bar_unstack(df=moufia_reallocated,
+                                                          title=f'after reallocation fractional cloud #10',
+                                                          output_tag=f'after_reallocation_moufia')
+
+            Project_cloud.plot_monthly_hourly_bar_unstack(df=moufia_raw,
+                                                          title=f'before reallocation fractional cloud #10',
+                                                          output_tag=f'before_reallocation_moufia')
 
         if cfg.job.moufia.regroup:
             # regroup the cloud types:
+            # using reallocated data:
+            moufia_reallocated = pd.read_pickle(cfg.file.moufia_reallocation)
 
             # remove the #2 cloud-free sea:
-            da1 = moufia[moufia != 2].dropna()
-            print(f'cloud free sea = {len(moufia[moufia == 2].dropna()):g} days')
-            print(f'snow over land = {len(moufia[moufia == 3].dropna()):g} days')
+            da1 = moufia_reallocated[moufia_reallocated != 2].dropna()
+            print(f'cloud free sea = {len(moufia_reallocated[moufia_reallocated == 2].dropna()):g} days')
+            print(f'snow over land = {len(moufia_reallocated[moufia_reallocated == 3].dropna()):g} days')
 
             # remove snow over land, since wrong detections, since moufia nearly never has snow.
             da1 = da1[da1 != 3].dropna()
@@ -210,85 +300,34 @@ def cloud(cfg: DictConfig) -> None:
             # only: #1 clearsky, #5 very-low, #6 low, #7 Mid-level #8 High Opaque,
             # #9 Very-high opaque, #10 fractional #11 high semitransparent cloud
 
-            da1.to_pickle(cfg.file.moufia_regroup)
+            da1.to_pickle(cfg.file.moufia_reallocation_regroup)  # still local time
 
-        if cfg.job.moufia.reallocation:
-            #  Reallocated pixels covered by fractional clouds, i.e., sub-pixel water clouds.
-            #  These pixels were reprocessed and reallocated so that they fall into the cloud type
-            #  most frequently observed among the 8 neighbouring pixels.
-            reu = GEO_PLOT.read_to_standard_da(cfg.file.reu_nc, 'ct')
-            moufia = pd.read_pickle(cfg.file.moufia_local_time)
-
-            # select the neighbour 8 pixels:
-            moufia_9p = GEO_PLOT.select_pixel_da(da=reu, lon=55.45, lat=-21.0, n_pixel=9)
-
-            moufia_9p_df = moufia_9p.to_dataframe()
-
-            # see the spatial concurrency: monthly
-            moufia_9p_count = moufia_9p_df.groupby([moufia_9p_df.index.get_level_values(0).month, 'ct']).size().unstack()
-
-            moufia_9p_count.plot(kind='bar', stacked=False)
-            moufia_9p_count.plot(kind='bar', stacked=True, legend=True)
-            plt.xlabel('month (2019)')
-            plt.ylabel('occurrence')
-            plt.xlim(-1, 14)
-            plt.title(f'ct in 2019, 15 min')
-            plt.savefig(f'./plot/monthly 9 pixel of moufia.png', dpi=300)
-            plt.show()
-
-            # hourly:
-            moufia_9p_count = moufia_9p_df.groupby([moufia_9p_df.index.get_level_values(0).hour, 'ct']).size().unstack()
-
-            moufia_9p_count.plot(kind='bar', stacked=True, legend=True)
-            plt.xlabel('Hour (2019)')
-            plt.ylabel('occurrence')
-            plt.xlim(-1, 30)
-            plt.title(f'ct in 2019, 15 min')
-            plt.savefig(f'./plot/hourly 9 pixel of moufia.png', dpi=300)
-            plt.show()
-
-            # relocation:
-            count = pd.DataFrame(moufia.value_counts()).sort_index()
-            print(f'{count.loc[[10.0]].values.ravel()[0]:g} timesteps with fraction cloud')
-
-            a = GEO_PLOT.get_data_in_classif(da=moufia_9p, df=moufia)
-
-            fraction_cloud = a.where(a['class'] == 10, drop=True).squeeze()
-
-            for i in range(len(moufia)):
-                if moufia.iloc[i]['ct'] == 10:
-                    print(f'found:', moufia.index[i])
-
-                    dominate = moufia_9p[i, :, :]
-
+            # make some statistics before reallocation fractional could to its dominate neighbours
+            moufia_regroup = pd.read_pickle(cfg.file.moufia_reallocation_regroup)
+            Project_cloud.plot_monthly_hourly_bar_unstack(df=moufia_regroup,
+                                                          title=f'ct in 2019, moufia pixel after reallocation @15min',
+                                                          output_tag=f'reallocation regroup pixel at moufia')
 
         if any(GEO_PLOT.get_values_multilevel_dict(dict(cfg.job.moufia.statistics))):
-            df = moufia
-            df = pd.read_pickle(cfg.file.moufia_regroup)
+            # load data for analysis:
+            df = pd.read_pickle(cfg.file.moufia_reallocation_regroup)
 
-            if cfg.job.moufia.statistics.monthly:
-
+            if cfg.job.moufia.statistics.temporal:
                 df19 = df[df.index.year == 2019]
-                # monthly:
-                df19_count = df19.groupby([df19.index.month, 'ct']).size().unstack()
 
-                df19_count.plot(kind='bar', stacked=False)
-                df19_count.plot(kind='bar', stacked=True, legend=True)
-                plt.xlabel('month (2019)')
-                plt.ylabel('occurrence')
-                plt.xlim(-1, 14)
-                plt.savefig(cfg.file.ct_monthly_occurrence_plot, dpi=300)
-                plt.show()
+                Project_cloud.plot_monthly_hourly_bar_unstack(df=df19,
+                                                              title=f'moufia after reallocation regroup',
+                                                              output_tag=f'moufia_reallocated_regroup')
+            # statistics:
+            raw = pd.read_pickle(cfg.file.moufia_local_time)
+            reallocated = pd.read_pickle(cfg.file.moufia_reallocation)
+            regrouped = pd.read_pickle(cfg.file.moufia_reallocation_regroup)
 
-            if cfg.job.moufia.statistics.hourly:
-                # hourly:
-                df19_count = df19.groupby([df19.index.hour, 'ct']).size().unstack()
-                df19_count.plot(kind='bar', stacked=True, legend=True)
-                plt.xlabel('Hour (2019)')
-                plt.ylabel('occurrence')
-                plt.xlim(-1, 30)
-                plt.savefig(cfg.file.ct_hourly_occurrence_plot, dpi=300)
-                plt.show()
+            size = len(raw)
+            for ct in range(1, 16):
+                print(f'{ct:g}, {raw[raw == ct].dropna().size:g} \t'
+                      f'{reallocated[reallocated == ct].dropna().size:g} \t'
+                      f'{regrouped[regrouped == ct].dropna().size:g}')
 
 
 if __name__ == "__main__":

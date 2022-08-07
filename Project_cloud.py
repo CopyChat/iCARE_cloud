@@ -18,7 +18,7 @@ import pandas as pd
 import GEO_PLOT
 
 
-def plot_monthly_hourly_bar_unstack(df):
+def plot_monthly_hourly_bar_unstack(df, output_tag='jjj', title='kkk'):
 
     moufia_9p_count = df.groupby(
         [df.index.get_level_values(0).month, 'ct']).size().unstack()
@@ -28,8 +28,9 @@ def plot_monthly_hourly_bar_unstack(df):
     plt.xlabel('month (2019)')
     plt.ylabel('occurrence')
     plt.xlim(-1, 14)
-    plt.title(f'ct in 2019, 8 moufia nearby pixels, when center = 10, @15min')
-    plt.savefig(f'./plot/monthly 8 pixel of moufia.png', dpi=300)
+    plt.title(title)
+    plt.savefig(f'./plot/monthly_{output_tag:s}', dpi=300)
+
     plt.show()
 
     # hourly:
@@ -39,6 +40,6 @@ def plot_monthly_hourly_bar_unstack(df):
     plt.xlabel('Hour (2019)')
     plt.ylabel('occurrence')
     plt.xlim(-1, 30)
-    plt.title(f'ct in 2019, 8 moufia nearby pixels, when center = 10, @15min')
-    plt.savefig(f'./plot/hourly 8 pixel of moufia.png', dpi=300)
+    plt.title(title)
+    plt.savefig(f'./plot/hourly_{output_tag:s}', dpi=300)
     plt.show()

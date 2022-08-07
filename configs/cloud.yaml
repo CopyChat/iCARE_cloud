@@ -46,7 +46,8 @@ file:
   moufia_nc: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.moufia.yearly.nc
 
   moufia_local_time: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.moufia.yearly.local_time
-  moufia_regroup: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.moufia.yearly.local_time.regroup
+  moufia_reallocation: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.moufia.yearly.local_time.reallocation
+  moufia_reallocation_regroup: ./local_data/ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.moufia.yearly.local_time.reallocation.regroup
 
   ct_monthly_occurrence_plot: ./plot/ct_monthly_occurrence_2019.png
   ct_hourly_occurrence_plot: ./plot/ct_hourly_occurrence_2019.png
