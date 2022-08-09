@@ -17,11 +17,9 @@ job:
     missing_reu: 0
     select_moufia: 0
   moufia:
+    reallocation: 0
     regroup: 0
-    reallocation: 1
-    statistics:
-      monthly: 0
-      hourly: 0
+    statistics: 1
 
 
 dir:

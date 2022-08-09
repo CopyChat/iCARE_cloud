@@ -10,7 +10,6 @@ import sys
 import glob
 import hydra
 import numpy as np
-import matplotlib.pyplot as plt
 import xarray as xr
 from omegaconf import DictConfig
 from importlib import reload
@@ -75,7 +74,8 @@ def cloud(cfg: DictConfig) -> None:
                 # when develop or debug:
                 # use the ct_conditions file for local test, since it has the land-sea diff.
                 # list_file: list = sorted(glob.glob(f'{cfg.dir.icare_data_local:}/ct_conditions.*Z.nc'))
-                # raw_nc_file = f'./local_data/icare_dir_ccur/ct_conditions.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.nc'
+                # raw_nc_file = f'./local_data/icare_dir_ccur/
+                # ct_conditions.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.nc'
 
                 # when testing code with multi files locally:
                 # read a list_file to test locally:
@@ -234,11 +234,11 @@ def cloud(cfg: DictConfig) -> None:
             # ------------------------------------------ do the reallocation
 
             # make a loop
-            reallocated = []     # reallocated moufia pixel CT:
-            all_9p_frac_cloud = []   # index where all pixels are 10
+            reallocated = []  # reallocated moufia pixel CT:
+            all_9p_frac_cloud = []  # index where all pixels are 10
 
             # use data before regroup
-            moufia_reallocated = moufia_raw.copy()     # initialize
+            moufia_reallocated = moufia_raw.copy()  # initialize
             for i in range(len(frac_cld_9p_no10)):
                 # just for save and check
                 if np.isnan(frac_cld_9p_no10[i, 1, 1]):
@@ -261,7 +261,6 @@ def cloud(cfg: DictConfig) -> None:
 
             reallocated_df = moufia_reallocated.loc[frac_cld_9p_no10.time.values]
 
-            print(moufia_raw[moufia_raw==10].dropna().size, 1)
             Project_cloud.plot_monthly_hourly_bar_unstack(df=reallocated_df,
                                                           title=f'after reallocation fractional cloud day only',
                                                           output_tag=f'after_reallocation_moufia')
@@ -302,22 +301,14 @@ def cloud(cfg: DictConfig) -> None:
 
             da1.to_pickle(cfg.file.moufia_reallocation_regroup)  # still local time
 
-            # make some statistics before reallocation fractional could to its dominate neighbours
-            moufia_regroup = pd.read_pickle(cfg.file.moufia_reallocation_regroup)
-            Project_cloud.plot_monthly_hourly_bar_unstack(df=moufia_regroup,
-                                                          title=f'ct in 2019, moufia pixel after reallocation @15min',
-                                                          output_tag=f'reallocation regroup pixel at moufia')
-
         if any(GEO_PLOT.get_values_multilevel_dict(dict(cfg.job.moufia.statistics))):
             # load data for analysis:
             df = pd.read_pickle(cfg.file.moufia_reallocation_regroup)
+            df19 = df[df.index.year == 2019]  # some timestep are shift to 2020 after change the timezone
 
-            if cfg.job.moufia.statistics.temporal:
-                df19 = df[df.index.year == 2019]
-
-                Project_cloud.plot_monthly_hourly_bar_unstack(df=df19,
-                                                              title=f'moufia after reallocation regroup',
-                                                              output_tag=f'moufia_reallocated_regroup')
+            Project_cloud.plot_monthly_hourly_bar_unstack(df=df19,
+                                                          title=f'moufia after reallocation regroup',
+                                                          output_tag=f'moufia_reallocated_regroup')
             # statistics:
             raw = pd.read_pickle(cfg.file.moufia_local_time)
             reallocated = pd.read_pickle(cfg.file.moufia_reallocation)
@@ -325,9 +316,13 @@ def cloud(cfg: DictConfig) -> None:
 
             size = len(raw)
             for ct in range(1, 16):
-                print(f'{ct:g}, {raw[raw == ct].dropna().size:g} \t'
-                      f'{reallocated[reallocated == ct].dropna().size:g} \t'
-                      f'{regrouped[regrouped == ct].dropna().size:g}')
+                print(
+                    f'{ct:g}, {raw[raw == ct].dropna().size:g},'
+                    f'{raw[raw == ct].dropna().size * 100 / size:4.2f},'
+                    f'{reallocated[reallocated == ct].dropna().size:g},'
+                    f'{reallocated[reallocated == ct].dropna().size * 100 / size:4.2f},'
+                    f'{regrouped[regrouped == ct].dropna().size:g},'
+                    f'{regrouped[regrouped == ct].dropna().size * 100 / size:4.2f}')
 
 
 if __name__ == "__main__":
