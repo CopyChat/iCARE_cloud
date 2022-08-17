@@ -18,28 +18,40 @@ import pandas as pd
 import GEO_PLOT
 
 
-def plot_monthly_hourly_bar_unstack(df, output_tag='jjj', title='kkk'):
+def plot_monthly_hourly_bar_unstack(df, output_tag='jjj', title='kkk', stack_full: bool = False):
 
-    moufia_9p_count = df.groupby(
+    stacked = df.groupby(
         [df.index.get_level_values(0).month, 'ct']).size().unstack()
 
-    moufia_9p_count.plot(kind='bar', stacked=False)
-    moufia_9p_count.plot(kind='bar', stacked=True, legend=True)
+    y_label = 'occurrence'
+
+    if stack_full:
+        stacked = stacked.apply(lambda x: x*100/np.sum(x), axis=1)
+        print(stacked)
+        y_label = f'frequency (%)'
+
+    stacked.plot(kind='bar', stacked=True, legend=True)
+
     plt.xlabel('month (2019)')
-    plt.ylabel('occurrence')
+    plt.ylabel(y_label)
     plt.xlim(-1, 14)
     plt.title(title)
-    plt.savefig(f'./plot/monthly_{output_tag:s}', dpi=300)
+    plt.savefig(f'./plot/monthly_{output_tag:s}.full_{stack_full:g}.png', dpi=300)
 
     plt.show()
 
     # hourly:
-    moufia_9p_count = df.groupby([df.index.get_level_values(0).hour, 'ct']).size().unstack()
+    stacked = df.groupby([df.index.get_level_values(0).hour, 'ct']).size().unstack()
 
-    moufia_9p_count.plot(kind='bar', stacked=True, legend=True)
+    if stack_full:
+        stacked = stacked.apply(lambda x: x*100/np.sum(x), axis=1)
+        print(stacked)
+        y_label = f'frequency (%)'
+
+    stacked.plot(kind='bar', stacked=True, legend=True)
     plt.xlabel('Hour (2019)')
-    plt.ylabel('occurrence')
+    plt.ylabel(y_label)
     plt.xlim(-1, 30)
     plt.title(title)
-    plt.savefig(f'./plot/hourly_{output_tag:s}', dpi=300)
+    plt.savefig(f'./plot/hourly{output_tag:s}.full_{stack_full:g}.png', dpi=300)
     plt.show()
