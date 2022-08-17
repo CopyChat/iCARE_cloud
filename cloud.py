@@ -340,7 +340,15 @@ def cloud(cfg: DictConfig) -> None:
 
             if cfg.job.moufia.correlations.mean_annual_cycle:
 
-                Project_cloud.plot_annual_diurnal_cloudiness(df19, year='2019')
+                # mean annual cycle total cloudiness:
+                cld: dict = Project_cloud.annual_cycle_cloudiness(df19, year='2019')
+
+                # mean SSR annual cycle:
+
+                rg = GEO_PLOT.read_csv_into_df_with_header(cfg.file.gillot_rg_mf_2019)[{'GLO'}] * 10000 / 3600
+                # unit of mf is J/m2 (accumulated in 1 hour)
+
+                # data complete:
 
 
 

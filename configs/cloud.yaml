@@ -51,6 +51,8 @@ file:
 
   ct_monthly_occurrence_plot: ./plot/ct_monthly_occurrence_2019.png
   ct_hourly_occurrence_plot: ./plot/ct_hourly_occurrence_2019.png
+
+  gillot_rg_mf_2019: ./dataset/RG-2019_Gillot.csv
 #plot:
 #
 #output:
