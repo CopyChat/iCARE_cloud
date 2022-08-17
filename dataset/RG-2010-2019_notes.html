@@ -1,0 +1,1376 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html><head><meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
+<title>Donn&eacute;es&nbsp;horaires</title>
+<style type="text/css"> <!--    .montrer { display: block; }    .cacher { display: none; }   body { background-color: rgb(250, 250, 255); color: rgb(51, 0, 153); font-family: Helvetica,Arial,sans-serif;}   p.rubrique { font-weight: 700; color: rgb(51, 51, 153); font-style: italic; font-size: 90%;}   p.note { font-style: italic; font-weight: bolder;color: rgb(240, 90, 90);  margin-right: 10%; margin-left: 10%; font-size: 95%;}   table.titre { width: 60%; height: 100px; text-align: center; background-color: rgb(178, 209, 255); margin-left: auto; margin-right: auto;}   .fac { text-align: right; width: 50%; background-color: rgb(255, 255, 255); font-weight: 600; font-size: 95%; color: rgb(51, 0, 153); vertical-align: top;}    .detailfac { width: 100%; text-align: left; font-size: 80%; font-style: italic; font-weight: normal; color: rgb(51, 0, 153); }    .detailstation { text-align: left; width: 50%; color: rgb(51, 0, 153); font-size: 85%;}    .detailparam { font-size:85%; text-align: left; width: 100%; color: rgb(51, 0, 153); }    table.liste { font-size: 85% }   th { background-color: rgb(250, 235, 215);}   td.gras { font-weight: 600;}   hr { width: 66%; color: rgb(51, 51, 153); }   a:link    {color:rgb(51, 51, 153)}   a:visited {color:rgb(51, 51, 153)}   a:active  {color:rgb(51, 102, 255)}   a:hover   {color:rgb(51, 102, 255)}   li.rubrique { list-style-type: disc; font-weight: bold; color: rgb(51, 0, 153);}   div#popBox { position: absolute; background-color: rgb(51, 0, 153); color: rgb(250, 250, 250); font-family: arial, 'sans serif'; font-size: 90%;}--> </style>
+<script type="text/javascript">function mouseMove (evt) { var x = 0; var y = 0; var plusX = 0; var plusY = 0; if (document.layers) {  x = evt.x;  y = evt.y;  plusX = window.pageXOffset;  plusY = window.pageYOffset; } else    if (document.all) {  x = event.clientX;  y = event.clientY;  plusX = document.documentElement.scrollLeft;  plusY = document.documentElement.scrollTop; } else if (document.getElementById) {  x = evt.clientX;  y = evt.clientY;  plusX = window.pageXOffset;  plusY = window.pageYOffset; } document.getElementById("popBox").style.left = (x+plusX+15)+"px"; document.getElementById("popBox").style.top = (y+plusY+5)+"px";} if (document.layers) document.captureEvents(Event.MOUSEMOVE); if (document.layers || document.all) document.onmousemove = mouseMove; if (document.addEventListener) document.addEventListener('mousemove', mouseMove, true);if (document.attachEvent) document.attachEvent("onmousemove", mouseMove);function montre(s) { var elt = document.getElementById('popBox'); elt.style.display = "block"; elt.innerHTML = s;}function cache() { var elt = document.getElementById('popBox'); elt.style.display = "none";}function inverseAffichage(tag, idsh, idhd) {var i,x,tB,j=0,tA=new Array();if (document.getElementsByTagName){ tB=document.getElementsByTagName(tag); for(x=0;x<tB.length;x++) {  tA[j]=tB[x];  j++; } for(i=0;i<tA.length;i++) {  if(tA[i].className) {    if(tA[i].id==idsh) tA[i].className='montrer';   if(tA[i].id==idhd) tA[i].className='cacher';  } }}}</script>
+</head><body>
+<img src="data:image/jpeg;base64,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" alt="logo"><br>
+<div id="popBox"></div><a name="hautDePage"></a><div style="text-align: center;">
+<table class='titre' border="0">	<tbody>		<tr>			<td style="vertical-align: middle;"><h1><small><i>Notes du produit</i></small><br>Données horaires</h1></td>		</tr>	</tbody></table>
+   <blockquote>   <hr/>   <p class="note">N.B.: La vente, redistribution ou rediffusion des informations re&ccedil;ues, en l'&eacute;tat ou sous forme de produits d&eacute;riv&eacute;s, est   strictement interdite sans l'accord de METEO-FRANCE</p>   <hr/>   </blockquote>
+</div>
+   <ul><li class="rubrique">Description générale de la fourniture</li></ul>
+   <blockquote>
+   <div id="general_show" class="cacher">
+       <div style="cursor: pointer;" onclick="inverseAffichage('div','general_hide','general_show')"><p class="rubrique">+ <u>Afficher les informations</u></p></div>
+   </div>
+   <div id="general_hide" class="montrer">
+       <div style="cursor: pointer;" onclick="inverseAffichage('div','general_show','general_hide')"><p class="rubrique">- <u>Masquer les informations</u></p></div>
+       <table class="fac" border="1" cellpadding="3" cellspacing="3">
+       <tbody>
+       <tr class="fac"><td>Nombre de données commandées</td><td style="text-align: right;">3505920</td></tr>
+       <tr class="fac">
+           <td>Nombre de données fournies</td>
+           <td style="text-align: right;">2846545<br>
+               <table class="detailfac" border="0" cellpadding="2" cellspacing="2">
+               <tbody>
+               <tr class="detailfac"><td>Données facturées</td><td style="text-align: right;">2846545</td></tr>
+               <tr class="detailfac"><td>Données gratuites</td><td style="text-align: right;">0</td></tr>
+               </tbody>
+               </table>
+           </td>
+       </tr>
+       <tr class="fac"><td>Nombre de données manquantes<br>
+           <span style="font-style: italic; font-size:60%; font-weight: normal">(car la donnée est absente)</span></td>
+           <td style="text-align: right;">83879</td>
+       </tr>
+       <tr class="fac">
+           <td>Nombre de données non disponibles<br>
+           <span style="font-style: italic; font-size:60%; font-weight: normal">(car le paramètre n'est pas mesuré par la station)</span>
+           </td>
+           <td style="text-align: right;">575496</td>
+       </tr>
+       </tbody>
+       </table>
+   </div>
+   <hr/>
+   </blockquote>
+<ul><li class="rubrique">Description détaillée</li></ul>
+<blockquote>
+<span style="font-style: italic; color: rgb(51, 0, 153); font-size:90%;">
+Seules sont listés dans le tableau suivant, les stations et les paramètres pour lesquelles des manques apparaissent.<br>
+Se reporter au descriptif des postes pour conna&icirc;tre les paramètres mesurés par un poste.
+</span><br><br>
+<span style="font-style: italic; color: rgb(51, 0, 153); font-size:75%;">
+Dans l'ordre : nb de données commandées, fournies, manquantes, non mesurées, et filtrées.<br>
+Une info bulle est affichée en pointant la souris sur le nombre.
+</span> 
+<div id="detail_show" class="montrer"><div style="cursor: pointer;" onclick="inverseAffichage('div','detail_hide','detail_show')"><p class="rubrique">+ <u>Afficher les informations</u></p></div></div>
+<div id="detail_hide" class="cacher">
+<div style="cursor: pointer;" onclick="inverseAffichage('div','detail_show','detail_hide')"><p class="rubrique">- <u>Masquer les informations</u></p></div>
+<table class="detailstation" border="2" cellpadding="2" cellspacing="2">
+<tbody>
+<tr class="detailstation" >
+<th>Numéro</th>
+<th>Nom</th>
+<th>Détail de la fourniture</th>
+</tr>
+<tr class="detailstation">
+<td>97401540</td>
+<td>LES AVIRONS - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">75660</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">3900</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">8088</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97402240</td>
+<td>BELLEVUE BRAS-PANON</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">82696</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">3032</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">1920</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97404540</td>
+<td>PONT-MATHURIN</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">87269</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">379</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97405420</td>
+<td>PITON-BLOC - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">83883</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">1989</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">1776</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97405480</td>
+<td>PETITE-ILE - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">86720</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">928</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97406220</td>
+<td>PLAINE DES PALMISTES</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">83843</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">3805</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97407520</td>
+<td>LE PORT</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">87340</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">308</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97408580</td>
+<td>LA NOUVELLE_SAPC</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 204, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97409230</td>
+<td>LE COLOSSE</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">24283</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">1853</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">61512</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97409240</td>
+<td>MENCIOL</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 204, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97410238</td>
+<td>SAINT-BENOIT</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">85259</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">2389</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97412336</td>
+<td>GRAND-COUDE_SAPC</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 204, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97412384</td>
+<td>ST-JOSEPH - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">60503</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">4033</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">23112</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97413520</td>
+<td>COLIMACONS</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">83441</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">4207</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97413545</td>
+<td>SAINT-LEU - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">83797</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">3851</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97413550</td>
+<td>ETANG SAINT-LEU - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">86428</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">1220</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97413580</td>
+<td>PITON SAINT-LEU - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">66265</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">5711</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">15672</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97414431</td>
+<td>LE GOL LES HAUTS - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">83292</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">1164</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">3192</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97415511</td>
+<td>SAINT-PAUL - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">78235</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">4421</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">4992</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97415516</td>
+<td>BOIS DE NEFLES ST-PAUL - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">85889</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">1759</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97415536</td>
+<td>PETITE-FRANCE</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">79680</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">5784</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">2184</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97415541</td>
+<td>TAN-ROUGE - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">86194</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">1454</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97415550</td>
+<td>L'ERMITAGE - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">85764</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">1884</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97415566</td>
+<td>PITON-MAIDO</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">86905</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">743</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97415590</td>
+<td>POINTE DES TROIS-BASSINS</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">81225</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">6423</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97416410</td>
+<td>RAVINE DES CABRIS - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">85588</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">2060</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97416415</td>
+<td>PIERREFONDS - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">83477</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">4171</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97416463</td>
+<td>PIERREFONDS-AEROPORT</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">59778</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">30</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">27840</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97416465</td>
+<td>LIGNE-PARADIS - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">86217</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">1431</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97417360</td>
+<td>LE BARIL</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">86292</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">1356</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97418110</td>
+<td>GILLOT-AEROPORT</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">87642</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">6</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97418123</td>
+<td>LA MARE - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">81205</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">1619</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">4824</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97419310</td>
+<td>RIVIERE DE L'EST - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">81051</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">2565</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">4032</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97419350</td>
+<td>GROS PITON SAINTE-ROSE</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">85341</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">2307</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97419380</td>
+<td>BELLECOMBE-JACOB</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">84934</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">2714</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97420180</td>
+<td>BRAS-PISTOLET_SAPC</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">18725</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">259</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">68664</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97421210</td>
+<td>MARE A VIEILLE PLACE</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">2887</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">17</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">84744</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97422440</td>
+<td>PLAINE DES CAFRES</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">85455</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">2193</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97422465</td>
+<td>LE TAMPON - CIRAD</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">86384</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">1264</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+<tr class="detailstation">
+<td>97424410</td>
+<td>CILAOS</td>
+<td><table class="detailparam" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr style="background-color: rgb(255, 255, 204);">
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>RAYONNEMENT GLOBAL HORAIRE</small></i></b>')" onMouseOut="cache()">GLO</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données commandées</small></i></b>')" onMouseOut="cache()">87648</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données fournies</small></i></b>')" onMouseOut="cache()">86998</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données manquantes</small></i></b>')" onMouseOut="cache()">650</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données non mesurées</small></i></b>')" onMouseOut="cache()">0</div></td>
+<td><div style="cursor: pointer;" onMouseOver="montre('<b><i><small>Nombre de données filtrées</small></i></b>')" onMouseOut="cache()">0</div></td>
+</tr>
+</tbody></table>
+</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+</blockquote>
+  <ul><li class="rubrique">Attention</li></ul>   <blockquote>   <span style="font-size: 85%;">       Toutes les stations m&eacute;t&eacute;orologiques ne mesurent pas les m&ecirc;mes param&egrave;tres m&eacute;t&eacute;orologiques        aux m&ecirc;mes pas de temps.<br>       Se reporter au descriptif des postes pour conna&icirc;tre les param&egrave;tres mesur&eacute;s par un poste.   </span><br><span style="font-size: 85%;">       Les heures associ&eacute;es &agrave; certaines donn&eacute;es (donn&eacute;es horaires,        heures associ&eacute;es aux valeurs extr&ecirc;mes) correspondent aux heures du fuseau de r&eacute;f&eacute;rence :<br>       <ul><li>Stations m&eacute;tropolitaines : heures UTC (Coordinated Universal Time).</li>           <li>Stations d'outre-mer     : heures locales</li></ul></span><hr/>   </blockquote>
+<ul><li class="rubrique">Codes de qualité</li></ul>
+<blockquote>
+<div id="codes_show" class="montrer"><div style="cursor: pointer;" onclick="inverseAffichage('div','codes_hide','codes_show')"><p class="rubrique">+ <u>Afficher les codes de qualité</u></p></div></div>
+<div id="codes_hide" class="cacher"><div style="cursor: pointer;" onclick="inverseAffichage('div','codes_show','codes_hide')"><p class="rubrique">- <u>Masquer les codes de qualité</u></p></div>
+<table style="width: 33%;" border="0" cellpadding="1" cellspacing="2">
+<tbody>
+<tr><td>n</td><td>Donnée non mesurée</td></tr>
+<tr><td>m</td><td>Donnée manquante</td></tr>
+<tr><td>t</td><td>Donnée conforme</td></tr>
+<tr><td>i</td><td>Donnée interpolée</td></tr>
+<tr><td>v</td><td>Donnée originale validée</td></tr>
+<tr><td>d</td><td>Donnée douteuse</td></tr>
+<tr><td>e</td><td>Donnée estimée</td></tr>
+<tr><td>r</td><td>Donnée ventilée</td></tr>
+<tr><td>c</td><td>Donnée non ventilée</td></tr>
+<tr><td>f</td><td>Donnée filtrée</td></tr>
+</tbody>
+</table>
+</div>
+<br>
+<hr/>
+</blockquote>
+<ul><li class="rubrique">R&eacute;f&eacute;rences g&eacute;ographiques</li></ul>
+<blockquote>
+<table class="liste" border="1" cellpadding="2" cellspacing="2" width="100%">
+<tbody>
+<tr valign="top" bgcolor="rgb(0, 153, 153)">
+<th>Num&eacute;ro</th>
+<th>Nom</th>
+<th>Coordonn&eacute;es</th>
+<th>Lambert II &eacute;tendu</th>
+<th>Altitude</th>
+<th>Producteurs</th>
+</tr>
+<tr><td>97401540</td>
+<td>LES AVIRONS - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°14'22"S</td></tr>
+<tr><td>Longitude</td><td>55°19'39"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3879662</td></tr>
+<tr><td>Lambert X (m)</td><td>10252326</td></tr>
+</tbody></table></td>
+<td>180 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97402240</td>
+<td>BELLEVUE BRAS-PANON</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°00'17"S</td></tr>
+<tr><td>Longitude</td><td>55°37'21"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3805098</td></tr>
+<tr><td>Lambert X (m)</td><td>10266833</td></tr>
+</tbody></table></td>
+<td>480 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97404540</td>
+<td>PONT-MATHURIN</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°15'54"S</td></tr>
+<tr><td>Longitude</td><td>55°22'48"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3877391</td></tr>
+<tr><td>Lambert X (m)</td><td>10263735</td></tr>
+</tbody></table></td>
+<td>19 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2011</td><td>METEO-FRANCE</td></tr>
+<tr><td>De 2011 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97405420</td>
+<td>PITON-BLOC - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°19'16"S</td></tr>
+<tr><td>Longitude</td><td>55°34'20"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3862902</td></tr>
+<tr><td>Lambert X (m)</td><td>10300653</td></tr>
+</tbody></table></td>
+<td>812 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97405480</td>
+<td>PETITE-ILE - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°21'55"S</td></tr>
+<tr><td>Longitude</td><td>55°33'29"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3871868</td></tr>
+<tr><td>Lambert X (m)</td><td>10304323</td></tr>
+</tbody></table></td>
+<td>155 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97406220</td>
+<td>PLAINE DES PALMISTES</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°08'10"S</td></tr>
+<tr><td>Longitude</td><td>55°37'37"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3825906</td></tr>
+<tr><td>Lambert X (m)</td><td>10284723</td></tr>
+</tbody></table></td>
+<td>1032 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97407520</td>
+<td>LE PORT</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>20°56'46"S</td></tr>
+<tr><td>Longitude</td><td>55°16'55"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3837285</td></tr>
+<tr><td>Lambert X (m)</td><td>10207052</td></tr>
+</tbody></table></td>
+<td>9 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97408580</td>
+<td>LA NOUVELLE_SAPC</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°04'36"S</td></tr>
+<tr><td>Longitude</td><td>55°25'23"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3841263</td></tr>
+<tr><td>Lambert X (m)</td><td>10245721</td></tr>
+</tbody></table></td>
+<td>1415 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+<tr><td>De 2010 a 2019</td><td>DIRECTION GENERALE DE LA PREVENTION DES RISQUES</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97409230</td>
+<td>LE COLOSSE</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>20°56'04"S</td></tr>
+<tr><td>Longitude</td><td>55°39'52"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3788497</td></tr>
+<tr><td>Lambert X (m)</td><td>10263988</td></tr>
+</tbody></table></td>
+<td>16 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97409240</td>
+<td>MENCIOL</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>20°57'40"S</td></tr>
+<tr><td>Longitude</td><td>55°37'32"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3797603</td></tr>
+<tr><td>Lambert X (m)</td><td>10261553</td></tr>
+</tbody></table></td>
+<td>181 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97410238</td>
+<td>SAINT-BENOIT</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°03'31"S</td></tr>
+<tr><td>Longitude</td><td>55°43'09"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3801952</td></tr>
+<tr><td>Lambert X (m)</td><td>10288655</td></tr>
+</tbody></table></td>
+<td>43 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2011</td><td>METEO-FRANCE</td></tr>
+<tr><td>De 2011 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97412336</td>
+<td>GRAND-COUDE_SAPC</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°18'06"S</td></tr>
+<tr><td>Longitude</td><td>55°37'52"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3852426</td></tr>
+<tr><td>Lambert X (m)</td><td>10307134</td></tr>
+</tbody></table></td>
+<td>1085 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+<tr><td>De 2010 a 2019</td><td>DIRECTION GENERALE DE LA PREVENTION DES RISQUES</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97412384</td>
+<td>ST-JOSEPH - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°22'55"S</td></tr>
+<tr><td>Longitude</td><td>55°36'24"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3868658</td></tr>
+<tr><td>Lambert X (m)</td><td>10313965</td></tr>
+</tbody></table></td>
+<td>17 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97413520</td>
+<td>COLIMACONS</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°07'49"S</td></tr>
+<tr><td>Longitude</td><td>55°18'16"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3864586</td></tr>
+<tr><td>Lambert X (m)</td><td>10234538</td></tr>
+</tbody></table></td>
+<td>798 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2016</td><td>CIRAD</td></tr>
+<tr><td>De 2016 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97413545</td>
+<td>SAINT-LEU - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°11'14"S</td></tr>
+<tr><td>Longitude</td><td>55°18'02"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3874387</td></tr>
+<tr><td>Lambert X (m)</td><td>10241400</td></tr>
+</tbody></table></td>
+<td>222 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97413550</td>
+<td>ETANG SAINT-LEU - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°10'23"S</td></tr>
+<tr><td>Longitude</td><td>55°18'31"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3871113</td></tr>
+<tr><td>Lambert X (m)</td><td>10240798</td></tr>
+</tbody></table></td>
+<td>429 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97413580</td>
+<td>PITON SAINT-LEU - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°12'54"S</td></tr>
+<tr><td>Longitude</td><td>55°19'32"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3875879</td></tr>
+<tr><td>Lambert X (m)</td><td>10248883</td></tr>
+</tbody></table></td>
+<td>530 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97414431</td>
+<td>LE GOL LES HAUTS - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°14'44"S</td></tr>
+<tr><td>Longitude</td><td>55°25'40"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3868348</td></tr>
+<tr><td>Lambert X (m)</td><td>10268594</td></tr>
+</tbody></table></td>
+<td>365 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97415511</td>
+<td>SAINT-PAUL - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>20°58'31"S</td></tr>
+<tr><td>Longitude</td><td>55°19'30"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3836782</td></tr>
+<tr><td>Lambert X (m)</td><td>10217434</td></tr>
+</tbody></table></td>
+<td>186 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97415516</td>
+<td>BOIS DE NEFLES ST-PAUL - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>20°59'50"S</td></tr>
+<tr><td>Longitude</td><td>55°20'28"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3838418</td></tr>
+<tr><td>Lambert X (m)</td><td>10222799</td></tr>
+</tbody></table></td>
+<td>595 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97415536</td>
+<td>PETITE-FRANCE</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°02'42"S</td></tr>
+<tr><td>Longitude</td><td>55°20'31"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3846066</td></tr>
+<tr><td>Lambert X (m)</td><td>10229122</td></tr>
+</tbody></table></td>
+<td>1200 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97415541</td>
+<td>TAN-ROUGE - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°04'09"S</td></tr>
+<tr><td>Longitude</td><td>55°17'58"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3855199</td></tr>
+<tr><td>Lambert X (m)</td><td>10225785</td></tr>
+</tbody></table></td>
+<td>750 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97415550</td>
+<td>L'ERMITAGE - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°03'10"S</td></tr>
+<tr><td>Longitude</td><td>55°14'28"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3859696</td></tr>
+<tr><td>Lambert X (m)</td><td>10214729</td></tr>
+</tbody></table></td>
+<td>147 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97415566</td>
+<td>PITON-MAIDO</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°04'36"S</td></tr>
+<tr><td>Longitude</td><td>55°22'52"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3846436</td></tr>
+<tr><td>Lambert X (m)</td><td>10239260</td></tr>
+</tbody></table></td>
+<td>2150 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>OFFICE NATIONAL DES FORETS (avec DEFENSE FORESTIERE CONTRE L'INCENDIE)</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97415590</td>
+<td>POINTE DES TROIS-BASSINS</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°06'18"S</td></tr>
+<tr><td>Longitude</td><td>55°14'51"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3867452</td></tr>
+<tr><td>Lambert X (m)</td><td>10222503</td></tr>
+</tbody></table></td>
+<td>5 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97416410</td>
+<td>RAVINE DES CABRIS - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°16'28"S</td></tr>
+<tr><td>Longitude</td><td>55°28'31"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3867217</td></tr>
+<tr><td>Lambert X (m)</td><td>10279625</td></tr>
+</tbody></table></td>
+<td>310 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97416415</td>
+<td>PIERREFONDS - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°18'34"S</td></tr>
+<tr><td>Longitude</td><td>55°26'16"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3877598</td></tr>
+<tr><td>Lambert X (m)</td><td>10278486</td></tr>
+</tbody></table></td>
+<td>61 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97416463</td>
+<td>PIERREFONDS-AEROPORT</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°19'12"S</td></tr>
+<tr><td>Longitude</td><td>55°25'31"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3880811</td></tr>
+<tr><td>Lambert X (m)</td><td>10277948</td></tr>
+</tbody></table></td>
+<td>21 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97416465</td>
+<td>LIGNE-PARADIS - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°19'09"S</td></tr>
+<tr><td>Longitude</td><td>55°29'06"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3873325</td></tr>
+<tr><td>Lambert X (m)</td><td>10287006</td></tr>
+</tbody></table></td>
+<td>156 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97417360</td>
+<td>LE BARIL</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°21'34"S</td></tr>
+<tr><td>Longitude</td><td>55°43'55"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3849422</td></tr>
+<tr><td>Lambert X (m)</td><td>10330226</td></tr>
+</tbody></table></td>
+<td>115 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2011</td><td>METEO-FRANCE</td></tr>
+<tr><td>De 2011 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97418110</td>
+<td>GILLOT-AEROPORT</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>20°53'19"S</td></tr>
+<tr><td>Longitude</td><td>55°31'25"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3798352</td></tr>
+<tr><td>Lambert X (m)</td><td>10236557</td></tr>
+</tbody></table></td>
+<td>8 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97418123</td>
+<td>LA MARE - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>20°54'12"S</td></tr>
+<tr><td>Longitude</td><td>55°31'55"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3799733</td></tr>
+<tr><td>Lambert X (m)</td><td>10239718</td></tr>
+</tbody></table></td>
+<td>68 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97419310</td>
+<td>RIVIERE DE L'EST - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°07'12"S</td></tr>
+<tr><td>Longitude</td><td>55°45'31"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3807081</td></tr>
+<tr><td>Lambert X (m)</td><td>10302724</td></tr>
+</tbody></table></td>
+<td>144 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97419350</td>
+<td>GROS PITON SAINTE-ROSE</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°10'46"S</td></tr>
+<tr><td>Longitude</td><td>55°49'43"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3808073</td></tr>
+<tr><td>Lambert X (m)</td><td>10321258</td></tr>
+</tbody></table></td>
+<td>181 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97419380</td>
+<td>BELLECOMBE-JACOB</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°13'04"S</td></tr>
+<tr><td>Longitude</td><td>55°41'13"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3831851</td></tr>
+<tr><td>Lambert X (m)</td><td>10304619</td></tr>
+</tbody></table></td>
+<td>2245 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97420180</td>
+<td>BRAS-PISTOLET_SAPC</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>20°58'08"S</td></tr>
+<tr><td>Longitude</td><td>55°35'14"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3803566</td></tr>
+<tr><td>Lambert X (m)</td><td>10256750</td></tr>
+</tbody></table></td>
+<td>556 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+<tr><td>De 2010 a 2019</td><td>DIRECTION GENERALE DE LA PREVENTION DES RISQUES</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97421210</td>
+<td>MARE A VIEILLE PLACE</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°01'40"S</td></tr>
+<tr><td>Longitude</td><td>55°30'43"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3822394</td></tr>
+<tr><td>Lambert X (m)</td><td>10252932</td></tr>
+</tbody></table></td>
+<td>870 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97422440</td>
+<td>PLAINE DES CAFRES</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°12'33"S</td></tr>
+<tr><td>Longitude</td><td>55°34'22"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3844518</td></tr>
+<tr><td>Lambert X (m)</td><td>10285994</td></tr>
+</tbody></table></td>
+<td>1560 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97422465</td>
+<td>LE TAMPON - CIRAD</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°15'06"S</td></tr>
+<tr><td>Longitude</td><td>55°31'49"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3856704</td></tr>
+<tr><td>Lambert X (m)</td><td>10285064</td></tr>
+</tbody></table></td>
+<td>860 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>CIRAD</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr><td>97424410</td>
+<td>CILAOS</td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Latitude</td><td>21°08'03"S</td></tr>
+<tr><td>Longitude</td><td>55°28'18"E</td></tr>
+</tbody></table></td>
+<td><table style="width: 100%; font-size:80%" border="0" cellpadding="2" cellspacing="2"><tbody>
+<tr><td>Lambert Y (m)</td><td>-3844715</td></tr>
+<tr><td>Lambert X (m)</td><td>10260651</td></tr>
+</tbody></table></td>
+<td>1197 mètres</td>
+<td><table style="width: 100%; font-size:70%" border="0" cellpadding="0" cellspacing="0"><tbody>
+<tr><td>De 2010 a 2019</td><td>METEO-FRANCE</td></tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+<br>
+<hr/>
+</blockquote>
+<ul><li class="rubrique">Référence temporelle</li></ul>
+<blockquote>
+<table class="liste" border="1" cellpadding="2" cellspacing="2" width="64%">
+<tbody>
+<tr><th valign="top">Période</th><td valign="top">Du 1er janvier 2010 0:00 au 31 décembre 2019 23:00</td></tr>
+<tr><th valign="top">Heures</th><td valign="top">Toutes les heures</td></tr>
+</tbody></table><br><hr/>
+</blockquote>
+<ul><li class="rubrique">Param&egrave;tres</li></ul>
+<blockquote>
+<table class="liste" border="1" cellpadding="2" cellspacing="2" width="75%"><tbody>
+<tr><th>Mn&eacute;monique</th><th>Libell&eacute;</th><th>Unit&eacute;</th><th>Pas de temps</th></tr>
+<tr><td>GLO</td><td>RAYONNEMENT GLOBAL HORAIRE</td><td>JOULES/CM2</td><td>horaire</td></tr>
+</tbody></table>
+</blockquote>
+<hr/><br>
+</blockquote>
+</body></html>
