@@ -19,7 +19,9 @@ job:
   moufia:
     reallocation: 0
     regroup: 0
-    statistics: 1
+    statistics: 0
+    correlations:
+      mean_annual_cycle: 1
 
 
 dir:
