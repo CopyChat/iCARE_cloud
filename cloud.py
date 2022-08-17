@@ -309,6 +309,14 @@ def cloud(cfg: DictConfig) -> None:
             Project_cloud.plot_monthly_hourly_bar_unstack(df=df19,
                                                           title=f'moufia after reallocation regroup',
                                                           output_tag=f'moufia_reallocated_regroup')
+
+            # plot all cloud types without clearsky:
+            df19_cld = df19[df19 != 1].dropna()
+
+            Project_cloud.plot_monthly_hourly_bar_unstack(df=df19_cld, stack_full=True,
+                                                          title=f'moufia after reallocation regroup',
+                                                          output_tag=f'moufia_reallocated_regroup_only_cloudy')
+
             # statistics:
             raw = pd.read_pickle(cfg.file.moufia_local_time)
             reallocated = pd.read_pickle(cfg.file.moufia_reallocation)
