@@ -9,6 +9,7 @@ __author__ = "ChaoTANG@univ-reunion.fr"
 import sys
 import glob
 import hydra
+import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 from omegaconf import DictConfig
@@ -301,7 +302,7 @@ def cloud(cfg: DictConfig) -> None:
 
             da1.to_pickle(cfg.file.moufia_reallocation_regroup)  # still local time
 
-        if any(GEO_PLOT.get_values_multilevel_dict(dict(cfg.job.moufia.statistics))):
+        if cfg.job.moufia.statistics:
             # load data for analysis:
             df = pd.read_pickle(cfg.file.moufia_reallocation_regroup)
             df19 = df[df.index.year == 2019]  # some timestep are shift to 2020 after change the timezone
@@ -331,6 +332,16 @@ def cloud(cfg: DictConfig) -> None:
                     f'{reallocated[reallocated == ct].dropna().size * 100 / size:4.2f},'
                     f'{regrouped[regrouped == ct].dropna().size:g},'
                     f'{regrouped[regrouped == ct].dropna().size * 100 / size:4.2f}')
+
+        if any(GEO_PLOT.get_values_multilevel_dict(dict(cfg.job.moufia.correlations))):
+
+            df = pd.read_pickle(cfg.file.moufia_reallocation_regroup)
+            df19 = df[df.index.year == 2019]  # some timestep are shift to 2020 after change the timezone
+
+            if cfg.job.moufia.correlations.mean_annual_cycle:
+
+                Project_cloud.plot_annual_diurnal_cloudiness(df19, year='2019')
+
 
 
 if __name__ == "__main__":
