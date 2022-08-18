@@ -341,7 +341,6 @@ def cloud(cfg: DictConfig) -> None:
             df19 = df[df.index.year == 2019]  # some timestep are shift to 2020 after change the timezone
 
             if cfg.job.moufia.correlations.mean_annual_cycle:
-
                 # mean annual cycle total cloudiness:
                 cld: dict = Project_cloud.annual_cycle_cloudiness(df19, year='2019')
 
@@ -350,19 +349,12 @@ def cloud(cfg: DictConfig) -> None:
                 rg = GEO_PLOT.read_csv_into_df_with_header(cfg.file.gillot_rg_mf_2019)[{'GLO'}] * 10000 / 3600
                 # unit of mf is J/m2 (accumulated in 1 hour)
 
-                df3 = rg.copy()
-                df4 = df3[~df3.index.duplicated(keep='first')]
+                # rg = rg[~rg.index.duplicated(keep='first')]
+                # keyword: remove duplicated
 
                 # data complete:
-                # check missing for each year
-                freq = '60min'
-                start = '2019-01-01 00:00'
-                end = '2019-12-31 23:00'
-
-                mon_hour_matrix = GEO_PLOT.check_missing_da_df(
-                    start=start, end=end, freq=freq,
-                    data=rg, plot=True)
-                print(mon_hour_matrix)
+                mon_hour_matrix = GEO_PLOT.check_missing_da_df(start='2019-01-01 00:00', end='2019-12-31 23:00',
+                                                               freq='60min', data=rg, plot=True)
 
 
 if __name__ == "__main__":
