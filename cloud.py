@@ -179,8 +179,6 @@ def cloud(cfg: DictConfig) -> None:
 
             Project_cloud.test_plot_reu_grid(reu)
 
-
-
             moufia_raw: xr.DataArray = GEO_PLOT.select_pixel_da(da=reu, lon=55.45, lat=-21.0, n_pixel=1)
 
             new_da = xr.DataArray(data=moufia_raw.data, dims=('time',),
@@ -352,15 +350,18 @@ def cloud(cfg: DictConfig) -> None:
                 rg = GEO_PLOT.read_csv_into_df_with_header(cfg.file.gillot_rg_mf_2019)[{'GLO'}] * 10000 / 3600
                 # unit of mf is J/m2 (accumulated in 1 hour)
 
+                df3 = rg.copy()
+                df4 = df3[~df3.index.duplicated(keep='first')]
+
                 # data complete:
                 # check missing for each year
                 freq = '60min'
                 start = '2019-01-01 00:00'
-                end = '2019-12-31 00:00'
+                end = '2019-12-31 23:00'
 
-                mon_hour_matrix = GEO_PLOT.check_missing_da(
+                mon_hour_matrix = GEO_PLOT.check_missing_da_df(
                     start=start, end=end, freq=freq,
-                    da=rg, plot=True)
+                    data=rg, plot=True)
                 print(mon_hour_matrix)
 
 

@@ -679,28 +679,79 @@ def multi_year_daily_mean(var: xr.DataArray):
     return ydaymean
 
 
-def check_missing_da(start: str, end: str, freq: str, da: xr.DataArray, plot: bool = True):
+def check_missing_df(start: str, end: str, freq: str, df: pd.DataFrame, plot: bool = True):
     """
     to find the missing data number in months and in hours
     :param start:
     :param end:
     :param freq:
-    :param da:
+    :param df:
     :param plot:
     :return:
     """
     total_time_steps = pd.date_range(start, end, freq=freq)
 
-    missing_num = len(total_time_steps) - da.sizes['time']
+    missing_num = len(total_time_steps) - len(df)
     print(f'there are {missing_num:g} missing values..')
+
+    matrix_mon_hour = np.zeros((12, 24))
 
     if missing_num:
         # find the missing values:
         A = total_time_steps.strftime('%Y-%m-%d %H:%M')
-        B = da.time.dt.strftime('%Y-%m-%d %H:%M')
+        B = df.index.strftime('%Y-%m-%d %H:%M')
         C = [i for i in A if i not in B]
 
-        matrix_mon_hour = np.zeros((12, 24))
+        missing_datetime = pd.to_datetime(C)
+        for i in range(1, 13):
+            monthly = missing_datetime[missing_datetime.month == i]
+            for h in range(0, 24):
+                missing_hours = list(monthly.groupby(monthly.hour).keys())
+
+                if h in missing_hours:
+                    matrix_mon_hour[i - 1, h] = monthly.groupby(monthly.hour)[h].size
+
+    if plot:
+
+        im = plt.imshow(matrix_mon_hour, cmap="OrRd")
+        plt.colorbar(im, orientation='horizontal', shrink=0.8, pad=0.2,
+                     label='num of missing values')
+
+        plt.xlabel('hour')
+        plt.ylabel('month')
+
+        plt.title(f'num of missing data in month and hour @ {freq:s}')
+
+        plt.show()
+
+    return matrix_mon_hour
+
+
+def check_missing_da_df(start: str, end: str, freq: str, data: xr.DataArray, plot: bool = True):
+    """
+    to find the missing data number in months and in hours
+    :param start:
+    :param end:
+    :param freq:
+    :param data:
+    :param plot:
+    :return:
+    """
+    total_time_steps = pd.date_range(start, end, freq=freq)
+
+    missing_num = len(total_time_steps) - len(data)
+    print(f'there are {missing_num:g} missing values..')
+
+    matrix_mon_hour = np.zeros((12, 24))
+    if missing_num:
+        # find the missing values:
+        A = total_time_steps.strftime('%Y-%m-%d %H:%M')
+        if isinstance(data, xr.DataArray):
+            B = data.time.dt.strftime('%Y-%m-%d %H:%M')
+        if isinstance(data, pd.DataFrame):
+            B = df.index.strftime('%Y-%m-%d %H:%M')
+        C = [i for i in A if i not in B]
+
         missing_datetime = pd.to_datetime(C)
         for i in range(1, 13):
             monthly = missing_datetime[missing_datetime.month == i]
