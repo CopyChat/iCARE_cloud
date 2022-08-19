@@ -24,11 +24,63 @@ import numpy as np
 from dateutil import tz
 import xarray as xr
 import cartopy.crs as ccrs
+
+# to have the right backend for the font.
 import matplotlib.pyplot as plt
+import matplotlib.figure as figure
+
 import cartopy.feature as cfeature
 from scipy import stats
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from statsmodels.stats.multitest import fdrcorrection as fdr_cor
+
+
+def fig_add_headers(
+        fig,  # input fig or GridSpec or GridSpecFromSubplotSpec
+        *,
+        row_headers=None,
+        col_headers=None,
+        row_pad=1,
+        col_pad=5,
+        rotate_row_headers=True,
+        **text_kwargs
+):
+    # Based on https://stackoverflow.com/a/25814386
+
+    axes = fig.get_axes()
+
+    for ax in axes:
+        sbs = ax.get_subplotspec()
+
+        # Putting headers on cols
+        if (col_headers is not None) and sbs.is_first_row():
+            ax.annotate(
+                col_headers[sbs.colspan.start],
+                xy=(0.5, 1), xycoords="axes fraction",
+                xytext=(0, col_pad), textcoords="offset points",
+                ha="center",
+                va="baseline",
+                **text_kwargs,
+            )
+        # Putting headers on rows
+        if (row_headers is not None) and sbs.is_first_col():
+            ax.annotate(
+                row_headers[sbs.rowspan.start],
+                xy=(0, 0.5),
+                # default:
+                # xytext=(-ax.yaxis.labelpad - row_pad, 0.5),
+                # textcoords="offset points",
+                xytext=(-0.25, 0.5),
+                textcoords="axes fraction",
+                xycoords=ax.yaxis.label,
+                ha="center",
+                va="center",
+                rotation=rotate_row_headers * 90,
+                **text_kwargs,
+            )
+
+
+xytext = (-0.2, 0.5),
 
 
 def rules_data_format():
@@ -1079,7 +1131,7 @@ def plot_geo_subplot_map(geomap, vmin, vmax, bias, ax,
 
     # vmax = geomap.max()
     # vmin = geomap.min()
-    cmap, norm = set_cbar(vmax=vmax, vmin=vmin, n_cbar=10, cmap=cmap, bias=bias)
+    cmap, norm = set_cbar(vmax=vmax, vmin=vmin, n_cbar=20, cmap=cmap, bias=bias)
 
     cf = 'wrong type'
 
@@ -1095,17 +1147,20 @@ def plot_geo_subplot_map(geomap, vmin, vmax, bias, ax,
         cbar_label = f'{geomap.name:s} ({geomap.assign_attrs().units:s})'
         plt.colorbar(cf, orientation='vertical', shrink=0.8, pad=0.05, label=cbar_label)
 
-    ax.text(0.98, 0.99, f'{tag:s}', fontsize=12,
+    ax.text(0.98, 0.96, f'{tag:s}', fontsize=11,
             horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
 
     if statistics:
-        ax.text(0.95, 0.05, f'{geomap.mean().values:4.2f}', fontsize=10,
-                horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
+        mean_value = geomap.mean().values
+        if np.abs(mean_value) > 0:
+            ax.text(0.98, 0.2, f'{mean_value:4.2f}', fontsize=11,
+                    horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
 
     return cf
 
 
-def get_data_in_classif(da: xr.DataArray, df: pd.DataFrame, significant: bool = 0, time_mean: bool = 0):
+def get_data_in_classif(da: xr.DataArray, df: pd.DataFrame, significant: bool = 0, time_mean: bool = 0,
+                        return_size: bool = False):
     """
     to get a new da with additional dim of classification df da and df may NOT in the same length of time.
     attention: the significant is calculated for all the available data,
@@ -1126,6 +1181,7 @@ def get_data_in_classif(da: xr.DataArray, df: pd.DataFrame, significant: bool = 
 
     print(f'get data in class...')
 
+    dic = {}
     for i in range(len(class_names)):
         cls = class_names[i]
         date_class_one: pd.DatetimeIndex = df.loc[df[class_column_name] == cls].index
@@ -1137,10 +1193,11 @@ def get_data_in_classif(da: xr.DataArray, df: pd.DataFrame, significant: bool = 
         # key word: matching, selecting, match two DataArray by index,
         # note: works only on day, a day is a class, since the format is up to day
 
+        dic[class_names[i]] = class_1.sizes['time']
         if significant:
             sig_map = value_significant_of_anomaly_2d_mask(field_3d=class_1)
             class_1 = filter_2d_by_mask(class_1, mask=sig_map)
-            # class_1 is the only significant values of all the time steps in one class.
+            # class_1 is the only significant pixels (with nan) of all the time steps in one class.
 
         if i == 0:
             data_in_class = class_1
@@ -1151,12 +1208,19 @@ def get_data_in_classif(da: xr.DataArray, df: pd.DataFrame, significant: bool = 
 
     # output:
     if time_mean:
+        # each class hase a mean
         data_in_class = data_in_class.mean('time')
 
     output_da = data_in_class.assign_coords({'class': class_names}).rename(da.name).assign_attrs(
         {'units': da.attrs['units']}).transpose(..., 'class')
 
-    return output_da
+    # for i in range(len(class_names)):
+    #     print(i, class_names[i], output_da[:, :, :, i].dropna(dim='time', how='all').sizes)
+
+    if return_size:
+        return output_da, dic
+    else:
+        return output_da
 
 
 def convert_unit_era5_flux(flux: xr.DataArray, is_ensemble: bool = 0):
@@ -1235,9 +1299,9 @@ def plot_cyclone_in_classif(classif: pd.DataFrame,
 
     print(f'plot cyclone within {int(radius): g} degree ...')
     # ----------------------------- prepare fig -----------------------------
-    fig, axs = plt.subplots(nrows=3, ncols=3, sharex='row', sharey='col', figsize=(12, 10), dpi=220,
+    fig, axs = plt.subplots(nrows=3, ncols=3, sharex=True, sharey=True, figsize=(12, 10), dpi=300,
                             subplot_kw={'projection': ccrs.PlateCarree()})
-    fig.subplots_adjust(left=0.1, right=0.85, bottom=0.12, top=0.9, wspace=0.09, hspace=0.01)
+    fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, wspace=0.01, hspace=0.01)
     axs = axs.ravel()
 
     # plot in class
@@ -1302,14 +1366,18 @@ def plot_cyclone_in_classif(classif: pd.DataFrame,
 
         # ----------------------------- end of plot -----------------------------
 
-        plt.title(f'#{c + 1:g}')
-        ax.text(0.96, 0.95, f'cyclone@reu={total:g}\n'
-                            f'total_day={len(class_one):g}\n'
-                            f'{100 * total / len(class_one):4.1f}%',
-                fontsize=12, horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+        # plt.title(f'CL{c + 1:g}')
 
-        ax.text(0.06, 0.01, f'plot only the path within a day',
-                fontsize=12, horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
+        ax.text(0.05, 0.95, f'Regime_{c + 1:g}',
+                fontsize=14, horizontalalignment='left', weight='bold', verticalalignment='top', transform=ax.transAxes)
+
+        ax.text(0.96, 0.95, f'nearby cyclone ={total:g}\n'
+                            f'total day = {len(class_one):g}\n'
+                            f'{100 * total / len(class_one):4.1f}%',
+                fontsize=14, horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+
+        # ax.text(0.06, 0.01, f'plot only the path within a day',
+        #         fontsize=12, horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
 
         # ----------------------------- end of plot -----------------------------
     title = f'cyclone within {radius:g} degree of Reunion'
@@ -1317,7 +1385,7 @@ def plot_cyclone_in_classif(classif: pd.DataFrame,
     if suptitle_add_word is not None:
         title = title + ' ' + suptitle_add_word
 
-    fig.suptitle(title)
+    # fig.suptitle(title)
     plt.savefig(f'./plot/{title.replace(" ", "_"):s}.radius_{radius:g}.deg'
                 f'.png', dpi=300)
 
@@ -1454,7 +1522,7 @@ def plot_diurnal_boxplot_in_classif(classif: pd.DataFrame, field: xr.DataArray,
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 6), facecolor='w', edgecolor='k', dpi=300)
 
     sns.boxplot(x='Hour', y=data_in_class.name, hue='Class', data=df, ax=ax,
-                    showmeans=True, showfliers=False)
+                showmeans=True, showfliers=False)
     # Seaborn's showmeans=True argument adds a mark for mean values in each box.
     # By default, mean values are marked in green color triangles.
 
@@ -1779,6 +1847,7 @@ def plot_diurnal_curve_in_classif(classif: pd.DataFrame, field_1D: xr.DataArray,
 def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame,
                                         field: xr.DataArray,
                                         area: str, vmax, vmin,
+                                        cmap='default',
                                         bias: bool = True,
                                         plot_wind: bool = 0,
                                         wind_anomaly: bool = 0,
@@ -1821,8 +1890,8 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame,
     """
 
     # ----------------------------- data -----------------------------
-    data_in_class = get_data_in_classif(da=field, df=classif, time_mean=False,
-                                        significant=0)
+    data_in_class, class_size = get_data_in_classif(da=field, df=classif, time_mean=False,
+                                                    significant=0, return_size=True)
     # when the data freq is not the freq as cla
     print(f'good')
     # ----------------------------- get definitions -----------------------------
@@ -1835,10 +1904,10 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame,
     # class_column_name = classif.columns.to_list()[0]
 
     # ----------------------------- plotting -----------------------------
-    fig, axs = plt.subplots(nrows=n_class, ncols=n_hour, sharex='row', sharey='col',
-                            figsize=(2 * n_hour, 1.25 * n_class), dpi=300,
+    fig, axs = plt.subplots(nrows=n_class, ncols=n_hour, sharex=True, sharey=True,
+                            figsize=(20, 14), dpi=300,
                             subplot_kw={'projection': ccrs.PlateCarree()})
-    fig.subplots_adjust(left=0.1, right=0.85, bottom=0.02, top=0.9, wspace=0.05, hspace=0.03)
+    fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.95, wspace=0.02, hspace=0.02)
 
     for cls in range(n_class):
         print(f'plot class = {cls + 1:g}')
@@ -1846,7 +1915,7 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame,
         in_class = data_in_class.where(data_in_class['class'] == class_names[cls], drop=True).squeeze()
         # nan comes from missing data and from non-significance
         in_class_dropna = in_class.dropna(dim='time')
-        num_record = in_class_dropna.shape[0]
+        num_record = class_size[class_names[cls]]
 
         for hour in range(n_hour):
 
@@ -1854,6 +1923,7 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame,
             ax = axs[cls, hour]
 
             data_in_hour = in_class_dropna.where(in_class_dropna.time.dt.hour == hours[hour], drop=True)
+            hourly_mean = data_in_hour.mean('time')
 
             if only_significant_points:
                 sig_map = value_significant_of_anomaly_2d_mask(field_3d=data_in_hour,
@@ -1873,13 +1943,13 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame,
                                       plot_cbar=False,
                                       statistics=0,
                                       plt_type=plt_type,
-                                      cmap='default',
+                                      cmap=cmap,
                                       ax=ax, domain=area, tag='')
 
             if cls == 0:
                 ax.set_title(f'{hours[hour]:g}:00', fontsize=20)
             if hour == 0:
-                plt.ylabel(f'#_{str(class_names[cls]):s} (num = {num_record:g})')
+                plt.ylabel(f'CL{str(class_names[cls]):s} (num = {num_record:g})')
                 # TODO: add this class name/number to y axis
 
             # class name:
@@ -1890,8 +1960,14 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame,
                 ax.text(0.01, 0.98, f'{str_class_names[cls]:s}', fontsize=18,
                         horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
 
-            ax.text(0.98, 0.01, f'{np.float(data_1h_mean.mean()):4.2f}', fontsize=16,
-                    horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
+            mean_value = np.float(data_1h_mean.mean())
+
+            if np.abs(mean_value) > 0:
+                ax.text(0.98, 0.01, f'{mean_value:4.2f}', fontsize=16,
+                        horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
+            # num of record
+            ax.text(0.01, 0.01, f'{num_record:g}', fontsize=16,
+                    horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
 
             ax.set_ylabel(f'#_{str(class_names[cls]):s}', color='b')
             ax.set_xlabel('xxx')
@@ -1977,8 +2053,8 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame,
 
     # ----------------------------- end of plot -----------------------------
     cbar_label = f'{field.name:s} ({field.assign_attrs().units:s})'
-    cb_ax = fig.add_axes([0.87, 0.2, 0.01, 0.7])
-    cb = plt.colorbar(cf, orientation='vertical', shrink=0.8, pad=0.05, cax=cb_ax)
+    cb_ax = fig.add_axes([0.15, 0.05, 0.7, 0.02])
+    cb = plt.colorbar(cf, orientation='horizontal', shrink=0.8, pad=0.05, cax=cb_ax)
     cb.ax.tick_params(labelsize=24)
     cb.set_label(label=cbar_label, fontsize=24)
 
@@ -1993,12 +2069,12 @@ def plot_diurnal_cycle_field_in_classif(classif: pd.DataFrame,
     if plot_field_flux:
         suptitle_add_word += f' {field_flux_name:s}'
 
-    title = f'{field.assign_attrs().long_name:s} in class'
+    title = f'{field.assign_attrs().name:s} in class'
 
     if suptitle_add_word is not None:
         title = title + ' ' + suptitle_add_word
 
-    fig.suptitle(title)
+    # fig.suptitle(title)
 
     # ----------------------------- end of plot -----------------------------
 
@@ -2270,7 +2346,8 @@ def plot_field_in_classif(field: xr.DataArray, classif: pd.DataFrame,
 def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
                      contour: bool = False,
                      area: str = 'SA_swio',
-                     only_significant_points: int = 0):
+                     only_significant_points: int = 0,
+                     paper_plot: int = False):
     """
     plot ttt phase by olr
     :param only_significant_points:
@@ -2278,6 +2355,15 @@ def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
     :param olr:
     :return:
     """
+    # ----------- definition plot:
+
+    if paper_plot:
+        fontsize = 18
+        plt_title = False
+    else:
+        plt_title = True
+        fontsize = 24
+
     # ----------------------------- use the regime in sarah-e period -----------------------------
 
     year_min = olr.indexes['time'].year.min()
@@ -2304,7 +2390,7 @@ def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
     # ----------------------------- fig config -----------------------------
     fig, axs = plt.subplots(nrows=4, ncols=2, sharex='row', sharey='col',
                             figsize=(8, 8), dpi=220, subplot_kw={'projection': ccrs.PlateCarree()})
-    fig.subplots_adjust(left=0.1, right=0.80, bottom=0.1, top=0.9, wspace=0.05, hspace=0.01)
+    fig.subplots_adjust(left=0.05, right=0.90, bottom=0.05, top=0.95, wspace=0.05, hspace=0.01)
 
     # to make it vertical, plot in column:
     axs = axs.T
@@ -2322,7 +2408,7 @@ def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
             break
 
         anomaly_olr_1phase: xr.DataArray = olr_anomaly.sel(time=date_phase_one)  # filter
-        # if there's a error: check
+        # if there's an error: check
         # 1) if data_phase_one is empty
         olr_1phase = olr.where(
             olr.time.dt.strftime('%Y-%m-%d').isin(date_phase_one.strftime('%Y-%m-%d')), drop=True)
@@ -2347,8 +2433,8 @@ def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
         # ----------------------------- start to plot -----------------------------
         # plt.title('#' + str(regime) + '/' + str(7), pad=3)
 
-        vmax = 40
-        vmin = -40
+        vmax = 50
+        vmin = -50
 
         lon, lat = np.meshgrid(anomaly_mean.lon, anomaly_mean.lat)
         level_anomaly = np.arange(vmin, vmax + 1, 5)
@@ -2367,13 +2453,13 @@ def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
 
         # ----------------------------- end of plot -----------------------------
 
-        ax.text(0.98, 0.90, f'{month:s}', fontsize=24,
+        ax.text(0.98, 0.90, f'{month:s}', fontsize=fontsize,
                 horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
 
-        ax.text(0.15, 0.98, f'#{regime:g}', fontsize=24,
+        ax.text(0.15, 0.98, f'#{regime:g}', fontsize=fontsize,
                 horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
 
-        ax.text(0.99, 0.01, f'{olr_anomaly.name:s}', fontsize=24,
+        ax.text(0.99, 0.01, f'{olr_anomaly.name:s}', fontsize=fontsize,
                 horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
 
         test = 0
@@ -2384,23 +2470,24 @@ def plot_ttt_regimes(olr_regimes: pd.DataFrame, olr: xr.DataArray,
 
     cbar_label = f'OLR ({olr_anomaly.assign_attrs().units:s})'
     cb = plt.colorbar(cf1, ticks=np.ndarray.tolist(level_anomaly), ax=axs, extend="max")
-    cb.ax.tick_params(labelsize=24)
-    cb.set_label(label=cbar_label, fontsize=24)
+    cb.ax.tick_params(labelsize=18)
+    cb.set_label(label=cbar_label, fontsize=18)
 
     title = f'olr regimes'
-    plt.suptitle(title)
+    if not paper_plot:
+        plt.suptitle(title)
 
     # tag: specify the location of the cbar
     # cb_ax = fig.add_axes([0.13, 0.1, 0.7, 0.015])
     # cb = plt.colorbar(cf1, orientation='horizontal', shrink=0.7, pad=0.05, label=cbar_label, cax=cb_ax)
 
-    plt.savefig(f'./plot/ttt_regimes_{area:s}_sig_{only_significant_points:g}.png', dpi=220)
+    plt.savefig(f'./plot/ttt_regimes_{area:s}_sig_{only_significant_points:g}.paper_plot_{paper_plot:g}.png', dpi=220)
 
     plt.show()
     print(f'got plot')
 
 
-def plot_color_matrix(df: pd.DataFrame, ax, cbar_label: str, plot_number: bool = False):
+def plot_color_matrix(df: pd.DataFrame, ax, cbar_label: str, plot_number: bool = False, cmap='Blues'):
     """
     plot matrix by df, where x is column, y is index,
     :param plot_number:
@@ -2417,7 +2504,7 @@ def plot_color_matrix(df: pd.DataFrame, ax, cbar_label: str, plot_number: bool =
 
     import math
 
-    c = ax.pcolor(df, cmap=plt.cm.get_cmap('Blues', df.max().max() + 1))
+    c = ax.pcolor(df, cmap=plt.cm.get_cmap(cmap, df.max().max() + 1))
 
     x_ticks_label = df.columns
     y_ticks_label = df.index
@@ -2456,7 +2543,6 @@ def plot_color_matrix(df: pd.DataFrame, ax, cbar_label: str, plot_number: bool =
                 ax.text(x_ticks[i], y_ticks[j], f'{c:2.0f}', va='center', ha='center')
         # put cbar label
         ax.yaxis.set_label_position("right")
-        ax.set_ylabel(cbar_label)
     else:
         cb = plt.colorbar(c, ax=ax, label=cbar_label, ticks=cbar_ticks)
         loc = [x + 0.5 for x in cbar_ticks]
@@ -2506,7 +2592,7 @@ def plot_join_heatmap_boxplot(da: xr.DataArray):
     # heatmap:
     ax = fig.add_subplot(gridspec[1, 1])
     heat = sns.heatmap(matrix, ax=ax,
-                           xticklabels=2, yticklabels=True)
+                       xticklabels=2, yticklabels=True)
 
     # boxplot for month:
     mon_mean = monthly_mean_da(da).to_dataframe()
@@ -2515,7 +2601,7 @@ def plot_join_heatmap_boxplot(da: xr.DataArray):
     ax_left = fig.add_subplot(gridspec[1, 0])
     sns.set_theme(style="ticks")
     mon_box_plot = sns.boxplot(x='month', y=da.name, data=mon_mean, ax=ax_left,
-                                   orient="h", palette="vlag", showmeans=True)
+                               orient="h", palette="vlag", showmeans=True)
 
     # mon_box_plot = sns.boxplot(x='month', y=da.name, data=mon_mean, ax=ax_left,
     #                                orient="h", palette="vlag", showmeans=True)
@@ -2573,8 +2659,8 @@ def plot_matrix_2d_df(
                 (df[x_column] == class_names_x[x]) &
                 (df[y_column] == class_names_y[y])).dropna()
 
-            ax = axs[y+1, x+1]
-            plt.sca(axs[y+1, x+1])
+            ax = axs[y + 1, x + 1]
+            plt.sca(axs[y + 1, x + 1])
             # plot:
             sns.histplot(data=mix_class[z_column], kde=True, stat='density',
                          binwidth=0.5,
@@ -2590,15 +2676,16 @@ def plot_matrix_2d_df(
 
             if statistics:
                 count = len(mix_class)
-                ratio = count * 100/len(df)
+                ratio = count * 100 / len(df)
                 tag = f'{count:g},{ratio:4.0f}%'
-                ax.text(0.9, 0.95, tag, fontsize=12, horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+                ax.text(0.9, 0.95, tag, fontsize=12, horizontalalignment='right', verticalalignment='top',
+                        transform=ax.transAxes)
 
                 if cut_off:
                     plt.axvline(x=cut_value, color='red', linestyle='--', linewidth=2, label='')
                     cut_count = len(mix_class[mix_class[z_column] > cut_value].dropna())
                     ax.text(0.9, 0.75,
-                            f'{cut_count*100/count:4.1f}%', fontsize=10, color='red',
+                            f'{cut_count * 100 / count:4.1f}%', fontsize=10, color='red',
                             horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
                 print(f'cut', cut_count, count, len(df))
 
@@ -2733,10 +2820,17 @@ def plot_matrix_class_vs_class_field(class_x: pd.DataFrame,
             cross[i, j] = len(class_cross)
     cross_df = pd.DataFrame(data=cross, index=class_name_y, columns=class_name_x).astype(int)
 
+    # contingency:
+    sig, expected = value_sig_neu_test_2d(contingency=cross_df.values, alpha=0.05, output_expected=True)
+    observed = cross_df.values
+
+    output = {'sig': sig, 'observed': observed, 'expected': expected}
+
     n_class_x = len(set(class_x.values.ravel()))
     n_class_y = len(set(class_y.values.ravel()))
 
     # ----------------------------- plot -----------------------------
+    fontsize = 14
     fig_width = n_class_x + 1
     fig_height = n_class_y + 1
 
@@ -2744,17 +2838,19 @@ def plot_matrix_class_vs_class_field(class_x: pd.DataFrame,
     n_raw = n_class_y + 1
 
     # prepare data:
-    field_in_class_x = get_data_in_classif(da=field, df=class_x, significant=only_significant_points,
-                                           time_mean=True)
-    field_in_class_y = get_data_in_classif(da=field, df=class_y, significant=only_significant_points,
-                                           time_mean=True)
+    field_in_class_x, class_size_x = get_data_in_classif(da=field, df=class_df[{column_name_x}],
+                                                         significant=only_significant_points,
+                                                         time_mean=True, return_size=True)
+    field_in_class_y, class_size_y = get_data_in_classif(da=field, df=class_df[{column_name_y}],
+                                                         significant=only_significant_points,
+                                                         time_mean=True, return_size=True)
 
     # for plot mjo vs ttt change the fig size:
-    fig_height = n_class_y - 2.3
+    fig_height = n_class_y
 
-    fig, axs = plt.subplots(nrows=n_raw, ncols=n_column, sharex='row', sharey='col',
-                            figsize=(fig_width, fig_height), dpi=300, subplot_kw={'projection': ccrs.PlateCarree()})
-    fig.subplots_adjust(left=0.05, right=0.8, bottom=0.10, top=0.9, wspace=0.01, hspace=0.01)
+    fig, axs = plt.subplots(nrows=n_raw, ncols=n_column, sharex=True, sharey=True,
+                            figsize=(fig_width + 1, fig_height), dpi=300, subplot_kw={'projection': ccrs.PlateCarree()})
+    fig.subplots_adjust(left=0.104, right=0.8, bottom=0.11, top=0.9, wspace=0.01, hspace=0.01)
 
     # plot for matrix in [1 ]
     # mixing this two class first.
@@ -2778,51 +2874,91 @@ def plot_matrix_class_vs_class_field(class_x: pd.DataFrame,
                 field_to_plot = field_mix_class.mean(dim='time')
 
             # plot:
+            ax = axs[y + 1, x + 1]
+
             cf = plot_geo_subplot_map(
                 geomap=field_to_plot,
-                bias=bias, domain='bigreu', tag='',
+                bias=bias, domain='reu', tag=f'',
                 vmax=vmax, vmin=vmin, plt_type=plt_type,
                 plot_cbar=False,
-                ax=axs[y + 1, x + 1])
+                ax=ax)
+            if sig[y, x]:
+                ax.text(0.98, 0.97, f'{observed[y, x]:g}'
+                                    # f'',
+                                    f'({np.round(expected[y, x]):g})',
+                        fontsize=10, weight='bold',
+                        horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+            else:
+                ax.text(0.98, 0.97, f'{observed[y, x]:g}'
+                                    # f'',
+                                    f' ({np.round(expected[y, x]):g})',
+                        fontsize=10,
+                        horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+
+            # ax.text(0.01, 0.98, f'{class_name_x[x]:g}', fontsize=12,
+            #         horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
 
     # plot x class: in [0, 1] to [0, -1]
     for x in range(n_class_x):
+        data = field_in_class_x.loc[{'class': class_name_x[x]}]
+        ax = axs[0, x + 1]
         plot_geo_subplot_map(
-            geomap=field_in_class_x.loc[{'class': class_name_x[x]}],
-            bias=bias, domain='bigreu', tag=f'#{class_name_x[x]:g}',
+            geomap=data,
+            bias=bias, domain='reu', tag=f'{class_size_x[class_name_x[x]]:g}',
             vmax=vmax, vmin=vmin, plt_type=plt_type,
             plot_cbar=0,
-            ax=axs[0, x + 1])
+            ax=ax)
+
+        # ax.text(0.01, 0.98, f'#{class_name_x[x]:g}', fontsize=12,
+        #         horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
 
     # plot y class: in [y, 0] to [-1, 0]
     for y in range(n_class_y):
+        data = field_in_class_y.loc[{'class': class_name_y[y]}]
+        ax = axs[y + 1, 0]
         plot_geo_subplot_map(
-            geomap=field_in_class_y.loc[{'class': class_name_y[y]}],
-            bias=bias, domain='bigreu', tag=f'#{class_name_y[y]:g}',
+            geomap=data,
+            bias=bias, domain='reu', tag=f'{class_size_y[class_name_y[y]]:g}',
             vmax=vmax, vmin=vmin, plt_type=plt_type,
             plot_cbar=0,
-            ax=axs[y + 1, 0])
+            ax=ax)
 
+        # ax.text(0.01, 0.98, f'#{class_name_y[y]:g}', fontsize=12,
+        #         horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
     # ================================== end plot ==================================
 
     # xlable:
     for x in range(n_class_x):
         ax = axs[n_class_y, x + 1]
-        ax.set_xlabel(f'Reg_{x+1:g}')
+        ax.set_xlabel(f'Reg_{x + 1:g}')
     # ylable:
     for y in range(n_class_y):
         ax = axs[y + 1, 0]
         ax.set_ylabel(f'Phase_{y + 1:g}')
 
+    title_x = ''
+    for i in range(n_class_x):
+        title_x += f'Reg_{class_name_x[i]:g}   '
+    plt.figtext(0.21, 0.91, title_x, fontsize=fontsize)
+
+    title_y = ''
+    for i in range(n_class_y):
+        title_y += f'Pha_{class_name_y[7 - i]:g}  '
+    plt.figtext(0.075, 0.12, title_y, rotation='vertical', fontsize=fontsize)
+
     # vertical cb position:
-    cb_ax = fig.add_axes([0.82, 0.12, 0.03, 0.75])
+    cb_ax = fig.add_axes([0.82, 0.12, 0.02, 0.75])
     # horizontal starting point, vertical from bottom, width, and height
 
     cbar_label = f'{field.assign_attrs().long_name:s} ({field.units:s})'
+
+    # for Mialhe_2021:
+    cbar_label = f'SSR daily anomaly (W m**-2)'
+
     # cb = plt.colorbar(cf, orientation='horizontal', shrink=0.7, pad=0.1,  cax=cb_ax)
     cb = plt.colorbar(cf, orientation='vertical', shrink=0.7, pad=0.1, cax=cb_ax)
-    cb.ax.tick_params(labelsize=18)
-    cb.set_label(label=cbar_label, fontsize=18)
+    cb.ax.tick_params(labelsize=fontsize)
+    cb.set_label(label=cbar_label, fontsize=fontsize)
 
     title = f'{suptitle_add_word:s} {column_name_x:s}_vs_{column_name_y}_in_{field.name:s}_' \
             f'{output_plot:s}'
@@ -2830,17 +2966,346 @@ def plot_matrix_class_vs_class_field(class_x: pd.DataFrame,
     plt.savefig(f'./plot/{title.replace(" ", "_"):s}'
                 f'significant_{only_significant_points:g}'
                 f'.png', dpi=300)
+    # for Mialhe_2021:
+
+    plt.figtext(0.04, 0.42, 'MJO phase NDJF', rotation='vertical', fontsize=fontsize)
+    plt.figtext(0.4, 0.95, 'OLR regime NDJF', fontsize=fontsize)
+    plt.savefig(f'./plot/Figure.8.png', dpi=300)
     print(f'./plot/{title.replace(" ", "_"):s}.png')
     plt.show()
     print(title)
 
-    #------
+    return output
+
+    # ------
+
+
+def value_sig_neu_test_2d(contingency: np.ndarray,
+                          output_expected: np.ndarray = None,
+                          alpha: float = 0.05,
+                          p_expected: bool = False):
+    """
+    if input is 1D, p_expected has to be given.
+    Args:
+        contingency:
+        output_expected:
+        alpha:
+        p_expected:
+
+    Returns:
+
+    """
+    # for Neu's test:
+    n_row = contingency.shape[0]
+    n_col = contingency.shape[1]
+    k = n_row
+    # for individual cell @(1-alpha/k) confidence level,
+    # the upper tail z_value, i.e., the (1-alpha/k)/2 th percentile.
+    z_score = stats.norm.interval(1 - alpha / k)[1]
+
+    # n_dim = 2
+    # z_score = stats.norm.interval(1 - alpha / (2 * n_dim), 0, 1)[1]
+
+    # total number of all columns, OLR regimes for example
+    count_cols = contingency.sum(axis=0)
+
+    # total number of all row, MJO phases for example
+    count_rows = contingency.sum(axis=1)
+    print(count_cols, count_rows)
+
+    # calculate expected P:
+    # if only one colum input,
+    if contingency.shape[1] < 2:
+        # if no input P_expected, quit
+        if output_expected == None:
+            quit(0)
+        else:
+            p_expect = p_expected
+    else:
+        # p_expected, same for each column, each e.g., for each OLR regime
+        p_expect = np.array(contingency.sum(axis=1) / np.sum(contingency))
+
+    # p_observed, value in cell divided by column sum
+    p_obs = np.array([contingency[:, i] / contingency[:, i].sum() for i in range(contingency.shape[1])]).T
+
+    significant = []
+    left_all = []
+    right_all = []
+    # loop for each column
+    for x in range(contingency.shape[1]):
+        # observed
+        p_i = p_obs[:, x]
+
+        left = p_i - z_score * np.sqrt(p_i * (1 - p_i) / count_cols[x])
+        right = p_i + z_score * np.sqrt(p_i * (1 - p_i) / count_cols[x])
+
+        sig = [np.logical_or(p_expect[y] < left[y], p_expect[y] > right[y]) for y in range(len(p_i))]
+
+        significant.append(sig)
+        right_all.append(right)
+        left_all.append(left)
+
+    # transpose:
+    significant = np.array(significant).T
+    left_all = np.array(left_all).T
+    right_all = np.array(right_all).T
+
+    # prepare outputs:
+
+    if output_expected:
+        # expected proportion:
+        expected_num = np.outer(p_expect, count_cols)
+
+        diff = contingency - expected_num
+
+        for m in range(contingency.shape[1]):
+            np.set_printoptions(precision=3)
+            print(f'column =', m + 1),
+            print(contingency[:, m])
+            print(expected_num[:, m])
+            print(diff[:, m])
+            print('observed', p_obs[:, m])
+            print('expected', p_expect)
+
+            print(left_all[:, m])
+            print(right_all[:, m])
+            print(significant[:, m])
+
+        print(f'input alpha= {alpha:4.2f}, '
+              f'the upper probability tail area is {alpha / 2 / k:4.4f}, '
+              f'individual confidence level is {1 - alpha / k: 4.4f}, '
+              f'z_score={z_score:4.3f}, k={k:g}')
+        return significant, expected_num
+    else:
+        print(z_score, f'k={k:g}', f'alpha={alpha:4.2f}')
+        return significant
+
+
+def test_neu_test():
+    pa = np.array([0.214, 0.188, 0.256, 0.342])
+    # values from Neu's paper 1974
+    alpha = 0.1
+    k = 4
+    # z_score = stats.norm.interval(1 - alpha / 2 / n_dim, 0, 1)[1]
+    # the upper tail z_value
+    z_score = stats.norm.interval(1 - alpha / k, 0, 1)[1]
+
+    n_all = 117
+    left = pa - z_score * np.sqrt(pa * (1 - pa) / n_all)
+    right = pa + z_score * np.sqrt(pa * (1 - pa) / n_all)
+
+    print(left, right)
+
+    print(f'input alpha= {alpha:4.2f}, '
+          f'the upper probability tail area is {alpha / 2/ k:4.4f}, '
+          f'individual confidence level is {1 - alpha / k: 4.4f}, '
+          f'z_score={z_score:4.3f}, k={k:g}')
+
+
+# def plot_monthly_diurnal_maps(field: xr.DataArray, ax):
+
+
+def contingency_2df_table(class_x: pd.DataFrame, class_y: pd.DataFrame, plot: bool = False,
+                          output_figure: str = 'contingency.png'):
+    # the input DataFrames may have different index, so merge two classes with DataTimeIndex:
+    class_df = class_y.merge(class_x, left_index=True, right_index=True)
+
+    # y direction:
+    name_y = class_df.columns[0]
+    # x direction:
+    name_x = class_df.columns[1]
+
+    class_name_y = list(set(class_df.iloc[:, 0]))
+    class_name_x = list(set(class_df.iloc[:, 1]))
+
+    # get cross matrix
+    cross = np.zeros((len(class_name_y), len(class_name_x)))
+    for i in range(len(class_name_y)):
+        class_one = class_df.loc[class_df[name_y] == class_name_y[i]]
+        for j in range(len(class_name_x)):
+            class_cross = class_one.loc[class_one[name_x] == class_name_x[j]]
+            cross[i, j] = len(class_cross)
+            print(f'x = {j+1:g}, y = {i+1:g}, cross_size = {cross[i,j]:g}')
+
+    cross_df = pd.DataFrame(data=cross, index=class_name_y, columns=class_name_x).astype(int)
+
+    sig, expected = value_sig_neu_test_2d(contingency=cross_df.values, alpha=0.05, output_expected=True)
+
+    # output = {'sig': sig[::-1], 'expected': expected[::-1], 'observed': cross[::-1]}
+    output = {'sig': sig, 'expected': expected, 'observed': cross}
+
+    if plot:
+
+        fontsize = 14
+        # ----------------------------- plot -----------------------------
+        fig = plt.figure(figsize=(12.5, 8), dpi=300)
+        widths = [1, 3]
+        heights = [1, 2]
+        gridspec = fig.add_gridspec(ncols=2, nrows=2, width_ratios=widths, height_ratios=heights)
+        gridspec.update(wspace=0.08, hspace=0.15)  # set the spacing between axes.
+
+        # matrix:
+        ax = fig.add_subplot(gridspec[1, 1])
+        cbar_label = 'count'
+
+        plot_number = True  # it's better to plot number with occurrence
+        cbar_label = 'observed - expected (N. of day)'
+
+        # ======== the color matrix:
+
+        import math
+        df = cross_df
+
+        x_ticks_label = df.columns
+        y_ticks_label = [np.int(x) for x in class_name_y[::-1]]
+
+        # put the major ticks at the middle of each cell
+        x_ticks = np.arange(df.shape[1]) + 0.5
+        y_ticks = np.arange(df.shape[0]) + 0.5
+
+        # inverse y_ticks, since the plot will go from bottom to up when using ax.text
+        y_ticks = y_ticks[::-1] #       up to down
+
+        ax.set_xticks(x_ticks, minor=False)
+        ax.set_yticks(y_ticks[::-1], minor=False)
+
+        ax.set_xticklabels(x_ticks_label, minor=False, fontsize=fontsize)
+        ax.set_yticklabels(y_ticks_label, minor=False, fontsize=fontsize)
+
+        ax.tick_params(bottom=True, top=True, left=True, right=True)
+        ax.tick_params(labelbottom=True, labeltop=True, labelleft=True, labelright=False)
+
+        diff = cross_df.values - expected
+
+        vmin = -30
+        vmax = 30
+        vmin = np.int(diff.min())
+        vmax = np.int(diff.max())
+
+        from matplotlib.colors import TwoSlopeNorm
+        if vmin * vmax < 0:
+            vmax = np.max([vmin, vmax])
+
+            vmax = 12
+            vmin = vmax * -1
+
+            # to make uneven colorbar with zero in white
+            norm = TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
+
+        cmap = plt.cm.get_cmap('RdYlGn', vmax + 1).reversed()
+        cmap = plt.cm.get_cmap('PiYG', vmax + 1).reversed()
+
+        # cmap = plt.cm.get_cmap('coolwarm', df.max().max() + 1)
+        # plot the inverse color: since pcolor plot it from bottom to up:
+        cf = ax.pcolor(diff[::-1], cmap=cmap, norm=norm)
+
+        if vmin + vmax < vmax:
+            cbar_ticks = [x for x in range(vmin, vmax + 1, math.ceil((vmax - vmin) / 10))]
+        else:
+            cbar_ticks = [x for x in range(vmin, vmax, math.ceil((vmax - vmin) / 10))]
+
+        print(cbar_ticks)
+        if plot_number:
+            number = cross
+            for i in range(number.shape[1]):  # x direction
+                for j in range(number.shape[0]):  # y direction
+                    c = number[j, i]
+                    # notice to the order of
+                    if sig[j, i]:
+                        ax.text(x_ticks[i], y_ticks[j], f'{c:2.0f}', va='center', ha='center',
+                                weight='bold', fontsize=fontsize)
+                    else:
+                        ax.text(x_ticks[i], y_ticks[j], f'{c:2.0f}', va='center', ha='center',
+                                fontsize=fontsize)
+            # put cbar label
+            ax.yaxis.set_label_position("right")
+
+        # add colorbar
+        cb_ax = fig.add_axes([0.92, 0.11, 0.02, 0.48])
+        cb = plt.colorbar(cf, orientation='vertical', shrink=0.8, pad=0.05, cax=cb_ax,
+                          ax=ax, label=cbar_label, ticks=cbar_ticks)
+        loc = [x for x in cbar_ticks]
+        cb.set_ticks(loc)
+        cb.set_ticklabels(cbar_ticks)
+        cb.ax.tick_params(labelsize=fontsize)
+        cb.set_label(label=cbar_label, fontsize=fontsize)
+
+        # ======== the color matrix: end
+
+        ax.set_xlabel('SSR class', fontsize=fontsize)
+
+        # histogram in x direction:
+        ax = fig.add_subplot(gridspec[0, 1])
+        bars = class_name_x
+        data = class_df[name_x]
+        height = [len(data[data == x]) for x in class_name_x]
+
+        colors = ['darkgray', 'lightskyblue', 'firebrick', 'indianred', 'darkgray',
+                  'cornflowerblue', 'royalblue', 'darkgray', 'darkgray']
+
+        y_pos = np.arange(len(bars))
+        ax.bar(bars, height, align='center', color=colors)
+
+        plt.grid(axis='y')
+        ax.set_xlim(0.5, y_pos[-1] + 1.5)  # these limit is from test
+        # x_ticks = np.arange(len(class_name_x)) + 0.5
+
+        # ax.set_xticks([], minor=False)
+        ax.set_xticklabels([], minor=False, fontsize=fontsize)
+        ax.tick_params(axis='y', labelsize=fontsize)
+        ax.tick_params(axis='x', labelsize=fontsize)
+        ax.set_ylabel('day', fontsize=fontsize)
+        ax.set_title('SSR class', fontsize=fontsize)
+
+        # histogram in y direction:
+        ax = fig.add_subplot(gridspec[1, 0])
+        bars = class_name_y
+        data = class_df[name_y]
+        height = [len(data[data == x]) for x in class_name_y]
+
+        colors_olr = ['darkgray', 'royalblue', 'indianred', 'darkgray', 'indianred', 'firebrick', 'darkgray']
+        # colors_olr = ['darkgray', 'blueviolet', 'orange', 'darkgray', 'orange', 'darkorange', 'darkgray']
+
+        y_pos = np.arange(len(bars))
+        ax.barh(bars, height, align='center', color='orange')
+
+        plt.grid(axis='x')
+
+        ax.set_ylim(0.5, y_pos[-1] + 1.5)
+        # these limit is from test
+        ax.invert_xaxis()
+        ax.invert_yaxis()
+
+        ax.tick_params(axis='x', labelsize=fontsize)
+        ax.tick_params(axis='y', labelsize=fontsize)
+        ax.yaxis.tick_right()
+        ax.set_yticklabels([], minor=False, fontsize=fontsize)
+
+        ax.set_xlabel('day', fontsize=fontsize)
+        ax.set_ylabel(name_y, fontsize=fontsize)
+
+        # end of plotting:
+        # title = f'{name_x:s} vs {name_y:s}'
+        # if suptitle_add_word is not None:
+        #     title = title + ' ' + suptitle_add_word
+        #
+        # fig.suptitle(title)
+        #
+        # plt.savefig(output_plot, dpi=300)
+
+        plt.savefig(f'./plot/{output_figure:s}', dpi=300)
+        plt.show()
+
+        print(f'job done')
+
+    return output
 
 
 def plot_matrix_class_vs_class(class_x: pd.DataFrame,
                                class_y: pd.DataFrame,
                                output_plot: str = 'class_vs_class_matrix',
                                occurrence: bool = 1,
+                               significant: bool = True,
                                suptitle_add_word: str = ""):
     """
     plot the matrix of class vs class, color bar is number of points
@@ -3057,8 +3522,8 @@ def plot_12months_geo_map_significant(da: xr.DataArray, area: str, sig_dim: str,
 
 def select_area_from_str(da: xr.DataArray, area: str):
     lonlat = value_lonlatbox_from_area(area)
-    da1 = da.where(np.logical_and(da.longitude > lonlat[0], da.longitude < lonlat[1]), drop=True)
-    da2 = da1.where(np.logical_and(da1.latitude > lonlat[2], da1.latitude < lonlat[3]), drop=True)
+    da1 = da.where(np.logical_and(da.lon >= lonlat[0], da.lon < lonlat[1]), drop=True)
+    da2 = da1.where(np.logical_and(da1.lat >= lonlat[2], da1.lat < lonlat[3]), drop=True)
 
     return da2
 
@@ -3126,64 +3591,37 @@ def plot_mjo_phase(mjo_phase: pd.DataFrame, olr: xr.DataArray, high_amplitude: b
     :return:
     """
     # ----------------------------- prepare the data -----------------------------
-    if high_amplitude:
-        filtering = f'amplitude > 1'
-        mjo_phase = data_filter_by_key_limit_value(data=mjo_phase, key='amplitude', how='gt', value=1)
-
-    # ----------------------------- filtering data by season -----------------------------
-    olr = filter_xr_by_month(data=olr, month=month)
     olr_daily_anomaly = anomaly_daily(olr)
-
-    # olr_daily_anomaly.to_netcdf(f'./mjo.anomaly.test.nc')
-
-    mjo_phase = filter_df_by_month(data=mjo_phase, month=month)
-
+    anomaly_in_class = get_data_in_classif(da=olr_daily_anomaly, df=mjo_phase[{'phase'}],
+                                           time_mean=True, significant=only_significant_points)
+    # for contour:
+    olr_in_class = get_data_in_classif(da=olr, df=mjo_phase[{'phase'}],
+                                       time_mean=True, significant=0)
     # ----------------------------- some predefined values of cbar limits -----------------------------
 
     fig, axs = plt.subplots(nrows=4, ncols=2, sharex='row', sharey='col',
                             figsize=(8, 10), dpi=220, subplot_kw={'projection': ccrs.PlateCarree()})
-    fig.subplots_adjust(left=0.1, right=0.85, bottom=0.12, top=0.9, wspace=0.1, hspace=0.1)
+    fig.subplots_adjust(left=0.05, right=0.90, bottom=0.05, top=0.95, wspace=0.05, hspace=0.05)
     # axs = axs.flatten()
     axs = axs.ravel()
 
     for phase in [1, 2, 3, 4, 5, 6, 7, 8]:
         print(f'plot class = {phase:g}')
         # ----------------------------- calculate mean in each phase -----------------------------
-        date_phase_one: pd.DatetimeIndex = mjo_phase.loc[mjo_phase['phase'] == phase].index
-        if len(date_phase_one) < 1:
-            print(f'Sorry, I got 0 day in phase = {phase:g}')
-            print(mjo_phase)
-            break
-        anomaly_olr_1phase: xr.DataArray = olr_daily_anomaly.sel(time=date_phase_one)  # filter
-        # if there's a error: check
-        # 1) if data_phase_one is empty
-        # 2) if the Time is 00:00:00
-        olr_1phase: xr.DataArray = olr.sel(time=date_phase_one)  # filter
-
-        # nday = anomaly_olr_1phase.shape[0]
-        anomaly_mean: xr.DataArray = anomaly_olr_1phase.mean(axis=0)
-        olr_mean = olr_1phase.mean(axis=0)
-
-        if only_significant_points:
-            # sig_map: xr.DataArray = value_mjo_significant_map(phase=phase, grid=anomaly_mean, month=month)
-            # above is the old function, I can not remember why
-            sig_map: xr.DataArray = value_significant_of_anomaly_2d_mask(
-                field_3d=anomaly_olr_1phase, conf_level=0.05, show=0)
-
-            # olr_mean = filter_2d_by_mask(olr_mean, mask=sig_map)
-            anomaly_mean = filter_2d_by_mask(anomaly_mean, mask=sig_map)
-            # to fix type
+        anomaly_mean = anomaly_in_class.where(anomaly_in_class['class'] == phase, drop=True).squeeze()
+        olr_mean = olr_in_class.where(olr_in_class['class'] == phase, drop=True).squeeze()
+        # nan comes from missing data and from non-significance
 
         ax = set_active_axis(axs=axs, n=phase - 1)
         set_basemap(area='swio', ax=ax)
         # set_basemap(area='SA_swio', ax=ax)
 
         # ----------------------------- start to plot -----------------------------
-        plt.title('#' + str(phase) + '/' + str(8), pad=3)
+        plt.title('#' + str(phase), pad=3, fontsize=18)
 
         lon, lat = np.meshgrid(anomaly_mean.lon, anomaly_mean.lat)
-        level_anomaly = np.arange(-50, 51, 5)
-        cf1 = plt.contourf(lon, lat, anomaly_mean, level_anomaly, cmap='PuOr_r', vmax=50, vmin=-50)
+        level_anomaly = np.arange(-30, 31, 5)
+        cf1 = plt.contourf(lon, lat, anomaly_mean, level_anomaly, cmap='PuOr_r', vmax=30, vmin=-30, extend='both')
         level_olr = np.arange(140, 280, 20)
         cf2 = plt.contour(lon, lat, olr_mean, level_olr, cmap='magma_r', vmax=280, vmin=140)
         ax.clabel(cf2, level_olr, inline=True, fmt='%2d', fontsize='xx-small')
@@ -3194,23 +3632,28 @@ def plot_mjo_phase(mjo_phase: pd.DataFrame, olr: xr.DataArray, high_amplitude: b
 
         # ----------------------------- end of plot -----------------------------
 
-        ax.text(0.9, 0.95, f'{month:s}', fontsize=12,
+        ax.text(0.9, 0.95, f'{month:s}', fontsize=18,
                 horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
 
-        ax.text(0.8, 0.1, f'{olr.name:s}', fontsize=12,
-                horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
+        ax.text(0.95, 0.02, f'{olr.name:s}', fontsize=18,
+                horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
 
     cbar_label = f'OLR ({olr.assign_attrs().units:s})'
-    plt.colorbar(cf1, ticks=np.ndarray.tolist(level_anomaly), label=cbar_label, ax=axs)
+    cb = plt.colorbar(cf1, ticks=np.ndarray.tolist(level_anomaly), label=cbar_label, ax=axs, extend='max')
+    cb.ax.tick_params(labelsize=18)
+    cb.set_label(label=cbar_label, fontsize=18)
 
-    title = f'MJO phase with {filtering:s} in {month:s}'
-    plt.suptitle(title)
+    title = f'MJO phase in {month:s}'
+    # plt.suptitle(title)
 
     # tag: specify the location of the cbar
     # cb_ax = fig.add_axes([0.13, 0.1, 0.7, 0.015])
     # cb = plt.colorbar(cf1, orientation='horizontal', shrink=0.7, pad=0.05, label=cbar_label, cax=cb_ax)
 
-    plt.savefig(f'./plot/mjo_phases_sig_{only_significant_points:g}.png', dpi=220)
+    plt.savefig(f'./plot/mjo_phases_sig_{only_significant_points:g}.'
+                f'{title.replace(" ", "_"):s}.'
+                f'high_amplitude_{high_amplitude:g}'
+                f'.png', dpi=300)
 
     plt.show()
     print(f'got plot')
@@ -3422,6 +3865,54 @@ def get_T_value(conf_level: float = 0.05, dof: int = 10):
 # 99.       1.290   1.660   1.984   2.365   2.626   3.175
 # 100.       1.290   1.660   1.984   2.364   2.626   3.174
 # infinity   1.282   1.645   1.960   2.326   2.576   3.090
+
+
+def value_next_day_classif(df: pd.DataFrame):
+    # classification transition:
+
+    from datetime import timedelta
+
+    classif = df
+    column_name = classif.columns.values[0]
+
+    # total num of days in each class
+    class_count = classif.value_counts().sort_index()
+
+    n_class = len(class_count)
+
+    next_day_occurrence = []
+    for ii in range(len(class_count)):
+        class_name = class_count.index[ii]
+
+        days = classif[classif[column_name] == class_name].index
+
+        next_days = days + timedelta(seconds=3600 * 24)
+
+        class_next_days = classif[classif.index.isin(next_days.values)]
+
+        # the num of next day may be smaller than today, since sarah_e has missing data
+        n_next_day = len(class_next_days)
+
+        count_next_days = class_next_days.value_counts().sort_index()
+
+        percentage = count_next_days * 100 / n_next_day
+        # percentage = count_next_days * 100 / len(days)
+
+        print(f'CL{class_name[0]:g}', percentage)
+
+        next_day_occurrence += [list(percentage.values)]
+
+    next_day_occurrence = np.array(next_day_occurrence)
+
+    # print output: a table
+    for i in range(n_class):
+        print(f'CL{class_count.index[i][0]:g}', class_count.iloc[i],
+              class_count.iloc[i] * 100 / class_count.sum(), *next_day_occurrence[i, :], sep=' ')
+
+    print([f'CL{class_count.index[i][0]:g}' for i in range(n_class)])
+    print([class_count.iloc[i] * 100 / class_count.sum() for i in range(n_class)])
+
+    return next_day_occurrence
 
 
 def value_olr_calssif_significant_map(phase: int, grid: xr.DataArray = 0, month: str = 0,
@@ -3828,8 +4319,12 @@ def set_cbar(vmax, vmin, n_cbar, bias, cmap: str = 'default'):
     else:
         print(f'use cbar specific')
 
-    bounds = np.linspace(vmin, vmax, n_cbar + 1)
-    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+    from matplotlib.colors import TwoSlopeNorm
+    if bias:
+        # to make uneven colorbar with zero in white
+        norm = TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
+    else:
+        norm = TwoSlopeNorm(vmin=vmin, vcenter=(vmax - vmin) / 2 + vmin, vmax=vmax)
 
     return cmap, norm
 
@@ -4340,7 +4835,6 @@ def plot_hourly_boxplot_ds_by(list_da: list, list_var_name: list, by: str = 'Mon
     :param by: 'Month' or 'season'
     :return:
     """
-
 
     ds = convert_multi_da_to_ds(list_da=list_da, list_var_name=list_var_name)
 
@@ -4983,7 +5477,7 @@ def ctang_convention():
 
     print(f'try to have name and units for any xr.DataArray')
 
-    return 0
+    return 111
 
 
 def convert_cmip6_ensemble_2_standard_da(
@@ -6352,6 +6846,89 @@ def value_humidity_specific_era5_Bolton(surface_pressure: xr.DataArray,
     return q
 
 
+def value_reso_from_da(grid: xr.DataArray):
+    # get resolution from grid
+    lat = grid.lat.values
+    lon = grid.lon.values
+
+    from decimal import Decimal
+    reso_lat = lat[1:] - lat[:-1]
+    reso_lat_list = [Decimal(x).quantize(Decimal("0.01"), rounding="ROUND_HALF_UP") for x in reso_lat]
+    reso_lat = np.float16(list(set(reso_lat))[0])
+
+    reso_lon = lon[1:] - lon[:-1]
+    reso_lon_list = [Decimal(x).quantize(Decimal("0.01"), rounding="ROUND_HALF_UP") for x in reso_lon]
+    reso_lon = np.float16(list(set(reso_lon))[0])
+
+    if reso_lat == reso_lon:
+        return reso_lat
+    else:
+        return {'lat': reso_lat, 'lon': reso_lon}
+
+
+def plot_topo_reunion_high_reso(plot: bool = True, grid=None, output_tag: str = ''):
+    # The map is based on the ASTER Global Digital Elevation Model
+    # from NASA Jet Propulsion Laboratory
+
+    file1 = f'~/local_data/topo/ASTGTMV003_S21E055_dem.nc'
+    file2 = f'~/local_data/topo/ASTGTMV003_S22E055_dem.nc'
+
+    ref1 = read_to_standard_da(file1, 'ASTER_GDEM_DEM')
+    ref2 = read_to_standard_da(file2, 'ASTER_GDEM_DEM')
+
+    ref = xr.concat([ref1, ref2[1:, :]], dim='y')
+    ref = ref.rename({'x': 'lon', 'y': 'lat'})
+
+    land = ref.where(ref != 0)
+
+    geomap = land
+
+    # plot:
+
+    cmap = plt.cm.terrain
+
+    fig = plt.figure(figsize=(8, 6), facecolor='w', edgecolor='k', dpi=300)
+    ax = plt.subplot(111, projection=ccrs.PlateCarree())
+
+    ax.set_extent([55.05, 56, -21.55, -20.7], crs=ccrs.PlateCarree())
+
+    cmap, norm = set_cbar(vmax=3100, vmin=0, n_cbar=20, cmap=cmap, bias=0)
+
+    cf = plt.pcolormesh(geomap.lon, geomap.lat, geomap,
+                        cmap=cmap, norm=norm, transform=ccrs.PlateCarree())
+
+    plt.xticks(np.arange(55.05, 56, 0.1))
+    plt.yticks(np.arange(-21.55, -20.7, 0.1))
+
+    cb = plt.colorbar(cf, orientation='vertical', shrink=0.9, pad=0.05)
+    cb.ax.tick_params(labelsize=14)
+
+    cbar_label = f'elevation (meter)'
+    cb.set_label(label=cbar_label, size=14)
+
+    if grid is not None:
+        # plot grid:
+        reso = value_reso_from_da(grid)
+
+        lon = np.round(grid.lon.values, decimals=2)
+        lat = np.round(grid.lat.values, decimals=2)
+
+        lon_grid = list(lon - reso * 0.5)
+        lon_grid.append(lon[-1] + 0.5 * reso)
+
+        lat_grid = list(lat - reso * 0.5)
+        lat_grid.append(lat[-1] + 0.5 * reso)
+
+        # plot
+        plt.hlines(lat_grid, xmin=0, xmax=100, linestyle='--', color='gray', linewidth=0.5)
+        plt.vlines(lon_grid, ymin=-30, ymax=0, linestyle='--', color='gray', linewidth=0.5)
+
+    plt.savefig(f'./plot/reu.topo.{output_tag:s}.png', dpi=300)
+    plt.show()
+
+    print(f'done')
+
+
 def value_altitude_from_lonlat_reunion(lon: np.ndarray, lat: np.ndarray,
                                        method: str = 'linear',
                                        show: bool = True):
@@ -6370,6 +6947,9 @@ def value_altitude_from_lonlat_reunion(lon: np.ndarray, lat: np.ndarray,
 
     """
     # read ref
+    # The map is based on the ASTER Global Digital Elevation Model
+    # from NASA Jet Propulsion Laboratory
+
     file1 = f'~/local_data/topo/ASTGTMV003_S21E055_dem.nc'
     file2 = f'~/local_data/topo/ASTGTMV003_S22E055_dem.nc'
 
@@ -6507,7 +7087,7 @@ def value_lonlatbox_from_area(area: str):
         box = [0, 90, -50, 10]
 
     if area == 'reu':
-        box = [55, 56, -21.5, -20.7]
+        box = [55.05, 56., -21.55, -20.7]
 
     if area == 'bigreu':
         box = [54, 57, -22, -20]
