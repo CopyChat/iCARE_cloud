@@ -356,6 +356,9 @@ def cloud(cfg: DictConfig) -> None:
                 mon_hour_matrix = GEO_PLOT.check_missing_da_df(start='2019-01-01 00:00', end='2019-12-31 23:00',
                                                                freq='60min', data=rg, plot=True)
 
+                # correlation matrix:
+                # df with all necessary columns in 12 months or 24 hours
+
 
 if __name__ == "__main__":
     sys.exit(cloud())
