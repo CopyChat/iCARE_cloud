@@ -2551,6 +2551,7 @@ def plot_color_matrix(df: pd.DataFrame, ax, cbar_label: str, plot_number: bool =
         cb = plt.colorbar(c, ax=ax, label=cbar_label, ticks=cbar_ticks)
         loc = [x + 0.5 for x in cbar_ticks]
         # loc = [x for x in cbar_ticks]
+
         cb.set_ticks(loc)
         cb.set_ticklabels(cbar_ticks)
 
