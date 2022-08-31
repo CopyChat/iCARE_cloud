@@ -10,6 +10,7 @@ import sys
 import glob
 import hydra
 import matplotlib.pyplot as plt
+from pathlib import Path
 import numpy as np
 import xarray as xr
 from omegaconf import DictConfig
@@ -65,7 +66,7 @@ def cloud(cfg: DictConfig) -> None:
 
                 # all files to be processed:
                 # change the dir in config/cloud.yami if needed
-                list_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/raw/ct.*Z.nc')
+                list_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/ct.*Z.nc')
 
                 # resort by DateTime in the name file
                 list_file.sort()
@@ -86,13 +87,20 @@ def cloud(cfg: DictConfig) -> None:
 
                 for raw_file in list_file:
                     print(raw_file)
-                    DATA.add_lon_lat_to_raw_nc(
-                        raw_nc_file=raw_file,
-                        var='ct',
-                        lon_file=cfg.file.icare_3km_lon_MSG0415,
-                        lat_file=cfg.file.icare_3km_lat_MSG0415,
-                        save=True
-                    )
+                    output_file = f'{Path(raw_file).stem:s}.lonlat.nc'
+                    output_path = f'{cfg.dir.icare_data_ccur:s}/{output_file:s}'
+                    output_list = glob.glob(output_path)
+
+                    if len(output_list):
+                        print(f'this is done: {output_file:s}')
+                    else:
+                        DATA.add_lon_lat_to_raw_nc(
+                            raw_nc_file=raw_file,
+                            var='ct',
+                            lon_file=cfg.file.icare_3km_lon_MSG0415,
+                            lat_file=cfg.file.icare_3km_lat_MSG0415,
+                            save=True
+                        )
                     # return da just for test
 
         if cfg.job.data.select_reunion:
@@ -341,9 +349,6 @@ def cloud(cfg: DictConfig) -> None:
             df19 = df[df.index.year == 2019]  # some timestep are shift to 2020 after change the timezone
 
             if cfg.job.moufia.correlations.mean_annual_cycle:
-                # mean annual cycle total cloudiness:
-                cld: dict = Project_cloud.annual_cycle_cloudiness(df19, year='2019')
-
                 # mean SSR annual cycle:
 
                 rg = GEO_PLOT.read_csv_into_df_with_header(cfg.file.gillot_rg_mf_2019)[{'GLO'}] * 10000 / 3600
@@ -356,8 +361,27 @@ def cloud(cfg: DictConfig) -> None:
                 mon_hour_matrix = GEO_PLOT.check_missing_da_df(start='2019-01-01 00:00', end='2019-12-31 23:00',
                                                                freq='60min', data=rg, plot=True)
 
+                ssr_day_night_monmean = rg.groupby(rg.index.month).mean()
                 # correlation matrix:
                 # df with all necessary columns in 12 months or 24 hours
+
+                ct_annual = Project_cloud.annual_cycle_cloudiness(df19, '2019')
+                cld_ssr_monmean = pd.concat([ct_annual, ssr_day_night_monmean], axis=1)
+
+                # pearson:
+                cor = cld_ssr_monmean.corr(method='pearson')
+
+                # plot:
+                fig = plt.figure(figsize=(10, 10), dpi=300)
+                ax = plt.subplot()
+                GEO_PLOT.plot_color_matrix(df=cor, cmap=plt.cm.get_cmap('PiYG').reversed(), plot_number=True, ax=ax,
+                                           vmin=-1, vmax=1,
+                                           cbar_label='jj')
+                plt.savefig(f'./plot/annual_ct_ssr_cross_corr.png', dpi=300)
+                plt.show()
+
+
+
 
 
 if __name__ == "__main__":
