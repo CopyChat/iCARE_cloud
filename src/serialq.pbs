@@ -1,0 +1,31 @@
+#!/bin/bash
+#PBS -N CT_2021
+#PBS -o cloud.out 
+#PBS -e cloud.err 
+#PBS -l walltime=24:00:00
+#PBS -l select=1:ncpus=1:mpiprocs=4:mem=10Gb
+#PBS -q serialq
+#PBS -M chao.tang@univ-reunion.fr
+#PBS -m ae
+#PBS -V
+
+echo $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+cat $PBS_NODEFILE
+
+
+ulimit -s unlimited
+
+#export PATH=/usr/local/bin/:$PATH 
+#source /gpfs/labos/le2p/ctang/.bashrc
+
+cd /gpfs/labos/le2p/ctang/Code/iCARE_cloud/
+
+source activate CLIMATE_2021
+
+/gpfs/labos/le2p/ctang/anaconda3/envs/CLIMATE_2021/bin/python3 /gpfs/labos/le2p/ctang/Code/iCARE_cloud/cloud.py > cloud.log 2>&1 
+
+
+./get_class_mean.sh  > log 2>&1
+
+

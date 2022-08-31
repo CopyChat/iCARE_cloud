@@ -35,8 +35,6 @@ shift $(($OPTIND - 1))
 local_icare_dir=~/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/icare_dir_ccur
 
 # if on CCuR:
-local_icare_dir=/gpfs/scratch/le2p/OBS_DATA/icare/ctang/2021/ct
-
 raw_dir=/gpfs/scratch/le2p/OBS_DATA/icare/raw
 ctang_dir=/gpfs/scratch/le2p/OBS_DATA/icare/ctang
 # ======================================
@@ -44,8 +42,7 @@ ctang_dir=/gpfs/scratch/le2p/OBS_DATA/icare/ctang
 function rename()
 # the data downloaded from icare server has a post-fix tag, which 
 # is not necessary there, so let remove it:
-# and sel the var, e.g., ct
-
+# this fuction works on the input dir by option "-d"
 {
     year=$1
 
@@ -74,32 +71,38 @@ function rename()
     done
 }
 
-rename 2021
-rename 2019
+#rename 2021
+#rename 2019
+rename 2020
 rename 2018
 rename 2022
 rename 2017
 
+# move all subdir file to current dir:
+#find . -type f -mindepth 2 -exec mv -i -- {} . \;
 
-#function selvar()
-## this function selects target variables, since the py code works only on DataArray
-## not on Dataset with multiple variables.
-#{
-#    cd $local_icare_dir
-#
-#    for f in $(ls ${local_icare_dir})
-#    do
-#        echo $f
-#
-#        for var in ct
-#        do
-#            echo $var
-#            cdo selvar,$var $f $var.$f
-#        done
-#
-#    done
-#
-#}
-#
-##rename $local_icare_dir
-##selvar
+# remove all empty dir:
+#find . -depth -mindepth 1 -type d -empty -exec rmdir {} \;
+
+function selvar()
+# this function selects target variables, since the py code works only on DataArray 
+# not on Dataset with multiple variables.
+{
+    cd $local_icare_dir
+
+    for f in $(ls ${local_icare_dir})
+    do
+        echo $f
+
+        for var in ct
+        do
+            echo $var
+            cdo selvar,$var $f $var.$f
+        done
+
+    done
+
+}
+
+#rename $local_icare_dir
+#selvar

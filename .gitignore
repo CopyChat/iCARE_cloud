@@ -37,3 +37,6 @@ dataset/list_classes__5Regimes.csv
 /doc/ref/NWC-CDOP2-GEO-MFL-SCI-VR-Cloud_v1.0.pdf
 /backup/GEO_PLOT.py.backup.2021.08.19.py
 /backup/GEO_PLOT.py.backup.2021.08.19.cloud.py
+/src/cloud.err
+/src/cloud.out
+/src/run.log
