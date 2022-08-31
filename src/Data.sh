@@ -17,7 +17,6 @@ USAGE="./Data.sh"
 #      REVISION: 1.0
 #=====================================================
 set -o nounset           # Treat unset variables as an error
-. ~/Shell/functions.sh   # ctang's functions
 
 while getopts ":td:" opt; do
     case $opt in
@@ -36,50 +35,71 @@ shift $(($OPTIND - 1))
 local_icare_dir=~/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/icare_dir_ccur
 
 # if on CCuR:
-local_icare_dir=/gpfs/scratch/le2p/OBS_DATA/icare/ctang/2019/ct
-# ======================================
+local_icare_dir=/gpfs/scratch/le2p/OBS_DATA/icare/ctang/2021/ct
 
+raw_dir=/gpfs/scratch/le2p/OBS_DATA/icare/raw
+ctang_dir=/gpfs/scratch/le2p/OBS_DATA/icare/ctang
+# ======================================
 
 function rename()
 # the data downloaded from icare server has a post-fix tag, which 
 # is not necessary there, so let remove it:
-# this fuction works on the input dir by option "-d"
-{
-    # get positional argument 1
-    dir=$1
+# and sel the var, e.g., ct
 
+{
+    year=$1
+
+    echo "year=" $year
     # go to the working position:
 
-    for f in $(ls ${dir})
+    for day_dir in $(ls ${raw_dir}/${year})
     do
-        echo $f
-        echo ${f%Z_*.nc}Z.nc
+        working_dir=${raw_dir}/${year}/${day_dir}
+        target_dir=${ctang_dir}/${year}/${day_dir}
+        mkdir ${target_dir}
+        echo 'working in '  $working_dir
 
-        mv $dir/$f $dir/${f%_*.nc}.nc
-    done
-}
-
-
-function selvar()
-# this function selects target variables, since the py code works only on DataArray 
-# not on Dataset with multiple variables.
-{
-    cd $local_icare_dir
-
-    for f in $(ls ${local_icare_dir})
-    do
-        echo $f
-
-        for var in ct
+        for f in $(ls ${working_dir})
         do
-            echo $var
-            cdo selvar,$var $f $var.$f
+            input=${working_dir}/$f
+            output=${target_dir}/${f%Z_*.nc}Z.nc
+            for var in ct
+            do
+                output=${target_dir}/$var.${f%Z_*.nc}Z.nc
+                echo $var, $input, $output >> run.log
+
+                cdo selvar,$var $input $output
+            done
         done
-
     done
-
 }
 
-#rename $local_icare_dir
+rename 2021
+rename 2019
+rename 2018
+rename 2022
+rename 2017
 
-selvar
+
+#function selvar()
+## this function selects target variables, since the py code works only on DataArray
+## not on Dataset with multiple variables.
+#{
+#    cd $local_icare_dir
+#
+#    for f in $(ls ${local_icare_dir})
+#    do
+#        echo $f
+#
+#        for var in ct
+#        do
+#            echo $var
+#            cdo selvar,$var $f $var.$f
+#        done
+#
+#    done
+#
+#}
+#
+##rename $local_icare_dir
+##selvar
