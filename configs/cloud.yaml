@@ -10,7 +10,7 @@ job:
   data:
     add_coords_to_raw:
       prepare_data_ccur: 0
-      add_coords_to_raw_nc: 0
+      add_coords_to_raw_nc: 1
     select_reunion: 0
     mergetime_swio: 0
     mergetime_reu: 0
@@ -21,7 +21,7 @@ job:
     regroup: 0
     statistics: 0
     correlations:
-      mean_annual_cycle: 1
+      mean_annual_cycle: 0
 
 
 dir:
@@ -30,10 +30,11 @@ dir:
   local_data: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data
   plot: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/plot
   icare_data_local: /Users/ctang/Microsoft_OneDrive/OneDrive/CODE/iCARE_cloud/local_data/icare_dir_ccur
-  icare_data_ccur: /gpfs/scratch/le2p/OBS_DATA/icare/ctang/2019/ct
+  icare_data_ccur: /gpfs/scratch/le2p/OBS_DATA/icare/ctang/2021
 
 param:
   plot_big_data_test: 1
+  ct_dict: {'1': 'clearsky', '5': 'vLow', '6': 'Low', '7': 'Med', '8': 'HOp', '9': 'vHOp', '11': 'sTp'}
 
 
 file:
