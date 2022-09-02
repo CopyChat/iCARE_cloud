@@ -5473,6 +5473,7 @@ def nc_mergetime(list_file: list, var: str, output_tag: str = 'mergetime', save:
     for i in range(len(list_file)):
         if i > 0:
             print(f'merging {i:g} of {len(list_file):g} ...')
+            print(list_file[i])
 
             da1 = read_to_standard_da(list_file[i], var)
 
