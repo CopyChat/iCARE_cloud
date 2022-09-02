@@ -66,7 +66,10 @@ def cloud(cfg: DictConfig) -> None:
 
                 # all files to be processed:
                 # change the dir in config/cloud.yami if needed
-                list_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/ct.*Z.nc')
+
+                # list_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/ct.*Z.nc')
+                list_file: list = glob.glob(f'/gpfs/scratch/le2p/OBS_DATA/icare/ctang/ct.*Z.nc')
+
 
                 # resort by DateTime in the name file
                 list_file.sort()
@@ -109,18 +112,35 @@ def cloud(cfg: DictConfig) -> None:
             # or a smaller domain:
             reu_box = [55.05, 56, -21.55, -20.7]
 
-            list_lonlat_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/raw/ct.*Z.lonlat.nc')
+            for year in [2017, 2018, 2019, 2020, 2021, 2022]:
+                path = f'/gpfs/scratch/le2p/OBS_DATA/icare/ctang/{str(year):s}'
+                list_lonlat_file: list = glob.glob(f'{path:s}/ct.*Z.lonlat.nc')
 
-            # resort by DateTime in the name file
-            list_lonlat_file.sort()
+                # resort by DateTime in the name file
+                list_lonlat_file.sort()
 
-            for raw_file in list_lonlat_file:
-                print(raw_file)
-                DATA.select_area_by_lon_lat_2D_dim(raw_nc_file=raw_file, var='ct',
-                                                   box=reu_box, area='reu', save=True)
+                for raw_file in list_lonlat_file:
+                    print(raw_file)
+                    # to skip processed file:
+                    output_file = f'{Path(raw_file).stem:s}.reu.nc'
+                    output_path = f'{path:s}/{output_file:s}'
+                    output_list = glob.glob(output_path)
 
-            # after selection the Reunion domain still in general projection.
-            # see plots of latitude and longitude in ./plot
+                    if len(output_list):
+                        print(f'this is done: {output_file:s}')
+                    else:
+                        DATA.select_area_by_lon_lat_2D_dim(raw_nc_file=raw_file, var='ct',
+                                                           box=reu_box, area='reu', save=True)
+
+                # after selection the Reunion domain still in general projection.
+                # see plots of latitude and longitude in ./plot
+
+                # merge reu (yearly)
+                list_reu_file: list = glob.glob(f'{path:s}/'
+                                            f'ct.*_{str(year):s}????T*Z.lonlat.reu.nc')
+                list_reu_file.sort()
+                GEO_PLOT.nc_mergetime(list_reu_file, 'ct', output_tag='yearly')
+                # this file is saved on CCuR as: ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.reu.yearly.nc
 
         if cfg.job.data.mergetime_swio:
             # since CDO mergetime function will lose the lon/lat by unknown reason,
@@ -146,13 +166,6 @@ def cloud(cfg: DictConfig) -> None:
                 list_file.sort()
                 GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='monthly')
 
-        if cfg.job.data.mergetime_reu:
-            # for reu (yearly)
-            list_file: list = glob.glob(f'{cfg.dir.icare_data_ccur:s}/reu/'
-                                        f'ct.*_2019????T*Z.lonlat.reu.nc')
-            list_file.sort()
-            GEO_PLOT.nc_mergetime(list_file, 'ct', output_tag='year.ly')
-            # this file is saved on CCuR as: ct.S_NWC_CT_MSG1_globeI-VISIR_20190101T000000Z.lonlat.reu.yearly.nc
 
         if cfg.job.data.missing_reu:
             # read nc in UTC00
