@@ -801,13 +801,14 @@ def check_missing_da_df(start: str, end: str, freq: str, data: xr.DataArray, plo
         if isinstance(data, xr.DataArray):
             B = data.time.dt.strftime('%Y-%m-%d %H:%M')
         if isinstance(data, pd.DataFrame):
-            B = df.index.strftime('%Y-%m-%d %H:%M')
+            B = data.index.strftime('%Y-%m-%d %H:%M')
         C = [i for i in A if i not in B]
 
         missing_datetime = pd.to_datetime(C)
         for i in range(1, 13):
             monthly = missing_datetime[missing_datetime.month == i]
             for h in range(0, 24):
+                print(f'hour = {h:g}, month = {i:g}')
                 missing_hours = list(monthly.groupby(monthly.hour).keys())
 
                 if h in missing_hours:
@@ -815,6 +816,7 @@ def check_missing_da_df(start: str, end: str, freq: str, data: xr.DataArray, plo
 
     if plot:
 
+        print(f'start to plot ...')
         im = plt.imshow(matrix_mon_hour, cmap="OrRd")
         plt.colorbar(im, orientation='horizontal', shrink=0.8, pad=0.2,
                      label='num of missing values')
@@ -823,6 +825,7 @@ def check_missing_da_df(start: str, end: str, freq: str, data: xr.DataArray, plo
         plt.ylabel('month')
 
         plt.title(f'num of missing data in month and hour @ {freq:s}')
+        plt.savefig(f'./plot/missing_value.png', dpi=300)
 
         plt.show()
 
@@ -5469,6 +5472,9 @@ def nc_mergetime(list_file: list, var: str, output_tag: str = 'mergetime', save:
 
     # read the first da
     da = read_to_standard_da(list_file[0], var)
+
+    print(f'merging 0 of {len(list_file):g} ...')
+    print(list_file[0])
 
     for i in range(len(list_file)):
         if i > 0:
