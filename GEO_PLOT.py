@@ -35,6 +35,16 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from statsmodels.stats.multitest import fdrcorrection as fdr_cor
 
 
+def code_selecting_indexing(da):
+    """
+    this is an example of code
+    :param da:
+    :return:
+    """
+
+    da = da.sel(time=slice('2016-12-16', '2016-12-31'), longitude=slice(40, 65), latitude=slice(-10, -35))
+
+
 def fig_add_headers(
         fig,  # input fig or GridSpec or GridSpecFromSubplotSpec
         *,
